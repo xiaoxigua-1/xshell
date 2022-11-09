@@ -1,3 +1,5 @@
+use crate::example::Example;
+
 pub trait Command {
     fn get_name(&self) -> &'static str;
 
