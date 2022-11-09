@@ -1,3 +1,5 @@
+use std::ffi::CStr;
+use std::os::raw::c_char;
 use std::io::{BufReader, Stdin};
 
 use crossterm::event::{read, Event, KeyModifiers, KeyCode};
@@ -46,6 +48,17 @@ impl<'a> XShellEvent<'a> {
             _ => {}
         }
     } 
+}
+
+extern "system" {
+    fn getlogin() -> *const c_char;
+} 
+
+#[test]
+fn whoami_test() {
+    unsafe {
+        println!("{:?}", CStr::from_ptr(getlogin()))
+    }
 }
 
 #[test]
