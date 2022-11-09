@@ -11,3 +11,9 @@ impl ShellState<'_> {
         self.user_input.clear();
     }
 }
+
+impl Default for ShellState<'_> {
+    fn default() -> Self {
+        ShellState { path: Path::new("~"), login: "".into(), user_input: String::new() }
+    }
+}

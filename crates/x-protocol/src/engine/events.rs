@@ -50,6 +50,6 @@ impl<'a> XShellEvent<'a> {
 
 #[test]
 fn test() {
-    let x_shell_event = XShellEvent::new(std::io::stdin());
+    let mut x_shell_event = XShellEvent::new(std::io::stdin(), ShellState::default());
     x_shell_event.listen_start().unwrap();
 }
