@@ -7,13 +7,13 @@ use crossterm::terminal::enable_raw_mode;
 
 use super::state::ShellState;
 
-struct XShellEvent<'a> {
+struct XShellEvent {
     stream: BufReader<Stdin>,
-    state: ShellState<'a>
+    state: ShellState
 }
 
-impl<'a> XShellEvent<'a> {
-    pub fn new(input: Stdin, state: ShellState<'a>) -> XShellEvent<'a> {
+impl XShellEvent {
+    pub fn new(input: Stdin, state: ShellState) -> XShellEvent {
         XShellEvent { stream: BufReader::new(input), state }
     }
 

@@ -1,4 +1,4 @@
 pub struct Example {
-    example: &'static str,
-    description: &'static str,
+    pub example: &'static str,
+    pub description: &'static str,
 }

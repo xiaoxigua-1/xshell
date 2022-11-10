@@ -1,15 +1,16 @@
-use std::path::Path;
-use x_util::whoami;
+use std::path::PathBuf;
+use x_util::{whoami, home_dir};
 
-pub struct ShellState<'a> {
-    pub path: &'a Path,
+#[derive(Clone, Debug)]
+pub struct ShellState {
+    pub path: Option<PathBuf>,
     pub login: String,
     pub user_input: String,
 }
 
-impl<'a> ShellState<'a> {
-    pub fn new(dir: &'a Path, login: String) -> Self {
-        ShellState { path: dir, login, user_input: String::new() }
+impl ShellState {
+    pub fn new(dir: PathBuf, login: String) -> Self {
+        ShellState { path: Some(dir), login, user_input: String::new() }
     }
 
     pub fn clear_input(&mut self) {
@@ -17,8 +18,14 @@ impl<'a> ShellState<'a> {
     }
 }
 
-impl Default for ShellState<'_> {
+impl Default for ShellState {
     fn default() -> Self {
-        ShellState { path: Path::new("~"), login: whoami().into(), user_input: String::new() }
+        ShellState { path: home_dir(), login: whoami().into(), user_input: String::new() }
     }
+}
+
+#[test]
+fn test() {
+    let state = ShellState::default();
+    println!("{:?}", state);
 }
