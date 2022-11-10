@@ -7,8 +7,10 @@ edition = "2021"
 
 [dependencies]
 x-protocol = { path = "./crates/x-protocol" }
+x-util = { path = "./crates/x-util" }
 
 [workspace]
 members = [
-  "./crates/x-protocol"
+  "./crates/x-protocol",
+  "./crates/x-util"
 ]
