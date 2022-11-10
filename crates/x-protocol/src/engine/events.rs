@@ -1,7 +1,7 @@
-use std::ffi::CStr;
-use std::os::raw::c_char;
-use std::io::{BufReader, Stdin};
+use std::io::{BufReader, Stdin, stdout};
 
+use crossterm::cursor;
+use crossterm::{style::Print, terminal, execute};
 use crossterm::event::{read, Event, KeyModifiers, KeyCode};
 use crossterm::terminal::enable_raw_mode;
 
@@ -18,16 +18,27 @@ impl<'a> XShellEvent<'a> {
     }
 
     pub fn listen_start(&mut self) -> crossterm::Result<()> {
+        let mut stdout = stdout();
         enable_raw_mode()?;
         loop {
             match read()? {
                 Event::Key(k) => {
                     match k.modifiers {
                         KeyModifiers::CONTROL => {
-                            self.ctrl(&k.code)
+                            self.ctrl(&k.code);
+                            continue;
                         }
                         _ => {}
                     }
+
+                    match k.code {
+                        KeyCode::Char(c) => self.state.user_input.push(c),
+                        _ => {}
+                    }
+
+                    execute!(stdout, terminal::Clear(terminal::ClearType::CurrentLine)).unwrap();
+
+                    execute!(stdout, cursor::MoveToColumn(0) , Print(self.state.user_input.clone()));
                 }
                 _ => {}
             }
@@ -38,7 +49,7 @@ impl<'a> XShellEvent<'a> {
         match code {
             KeyCode::Char(c) => {
                 match c {
-                    'd' | 'D' => std::process::exit(1),
+                    'd' | 'D' => std::process::exit(0),
                     'c' => {
                         self.state.clear_input()
                     },
