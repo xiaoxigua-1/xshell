@@ -26,22 +26,19 @@ impl<'a> XShellEvent<'a> {
                     match k.modifiers {
                         KeyModifiers::CONTROL => {
                             self.ctrl(&k.code);
-                            continue;
+                        }
+                        KeyModifiers::NONE => match k.code {
+                            KeyCode::Char(c) => self.state.user_input.push(c),
+                            _ => {}
                         }
                         _ => {}
                     }
-
-                    match k.code {
-                        KeyCode::Char(c) => self.state.user_input.push(c),
-                        _ => {}
-                    }
-
-                    execute!(stdout, terminal::Clear(terminal::ClearType::CurrentLine)).unwrap();
-
-                    execute!(stdout, cursor::MoveToColumn(0) , Print(self.state.user_input.clone()));
                 }
                 _ => {}
             }
+            execute!(stdout, terminal::Clear(terminal::ClearType::CurrentLine))?;
+
+            execute!(stdout, cursor::MoveToColumn(0) , Print(self.state.user_input.clone()))?;
         }
     }
 
