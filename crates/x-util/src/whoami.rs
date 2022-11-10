@@ -12,15 +12,15 @@ use winsafe::GetUserName;
 
 #[cfg(target_family = "unix")]
 fn get_username() -> &'static str { 
-    let pwd_pointer: *mut passwd = unsafe { libc::getpwuid(libc::geteuid()) };
-    let pwd = unsafe { read(pwd_pointer) };
     unsafe {
-        return CStr::from_ptr(pwd.pw_name).to_str().unwrap()
+        let pwd_pointer: *mut passwd = libc::getpwuid(libc::geteuid());
+        let pwd = read(pwd_pointer);
+        CStr::from_ptr(pwd.pw_name).to_str().unwrap()
     }
 }
 
 #[cfg(target_family = "windows")]
-pub fn get_username() -> String {
+fn get_username() -> String {
     GetUserName().unwrap()
 }
 
