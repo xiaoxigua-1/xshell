@@ -50,17 +50,6 @@ impl<'a> XShellEvent<'a> {
     } 
 }
 
-extern "system" {
-    fn getlogin() -> *const c_char;
-} 
-
-#[test]
-fn whoami_test() {
-    unsafe {
-        println!("{:?}", CStr::from_ptr(getlogin()))
-    }
-}
-
 #[test]
 fn test() {
     let mut x_shell_event = XShellEvent::new(std::io::stdin(), ShellState::default());

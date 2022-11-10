@@ -1,4 +1,5 @@
 use std::path::Path;
+use x_util::whoami;
 
 pub struct ShellState<'a> {
     path: &'a Path,
@@ -14,6 +15,6 @@ impl ShellState<'_> {
 
 impl Default for ShellState<'_> {
     fn default() -> Self {
-        ShellState { path: Path::new("~"), login: "".into(), user_input: String::new() }
+        ShellState { path: Path::new("~"), login: whoami().into(), user_input: String::new() }
     }
 }
