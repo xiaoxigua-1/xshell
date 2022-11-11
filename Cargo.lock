@@ -22,6 +22,22 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "crossterm"
+version = "0.24.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab9f7409c70a38a56216480fba371ee460207dd8926ccf5b4160591759559170"
+dependencies = [
+ "bitflags",
+ "crossterm_winapi",
+ "libc",
+ "mio",
+ "parking_lot",
+ "signal-hook",
+ "signal-hook-mio",
+ "winapi",
+]
+
+[[package]]
+name = "crossterm"
 version = "0.25.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e64e6c0fbe2c17357405f7c758c1ef960fce08bdfb2c03d88d2a18d7e09c4b67"
@@ -257,10 +273,41 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f6efbd0ff6f47f1fbd43348594cebf1c7bcd71f10136ff4f90133c35d625e14c"
 
 [[package]]
+name = "x-engine"
+version = "0.1.0"
+dependencies = [
+ "x-input",
+ "x-protocol",
+ "x-render",
+ "x-util",
+]
+
+[[package]]
+name = "x-input"
+version = "0.1.0"
+dependencies = [
+ "x-protocol",
+ "x-util",
+]
+
+[[package]]
+name = "x-parser"
+version = "0.1.0"
+
+[[package]]
 name = "x-protocol"
 version = "0.1.0"
 dependencies = [
- "crossterm",
+ "crossterm 0.24.0",
+ "x-util",
+]
+
+[[package]]
+name = "x-render"
+version = "0.1.0"
+dependencies = [
+ "x-input",
+ "x-protocol",
  "x-util",
 ]
 
@@ -268,6 +315,7 @@ dependencies = [
 name = "x-util"
 version = "0.1.0"
 dependencies = [
+ "crossterm 0.25.0",
  "home",
  "libc",
  "winsafe",
@@ -278,5 +326,4 @@ name = "xshell"
 version = "0.1.0"
 dependencies = [
  "x-protocol",
- "x-util",
 ]
