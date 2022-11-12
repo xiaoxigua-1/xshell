@@ -10,3 +10,4 @@ x-util = { path = "../x-util" }
 x-input = { path = "../x-input" }
 x-render = { path = "../x-render" }
 x-protocol = { path = "../x-protocol" }
+x-parser = { path = "../x-parser" }

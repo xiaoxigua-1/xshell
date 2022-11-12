@@ -1,11 +1,14 @@
 use std::path::PathBuf;
 use x_util::{whoami, home_dir};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum InputState {
     NewLine,
+    Execute,
     Up,
     Down,
+    Left,
+    Right,
     NONE
 }
 

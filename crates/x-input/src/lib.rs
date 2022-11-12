@@ -1,6 +1,5 @@
 use x_protocol::ShellState;
 use x_protocol::crossterm::event::{KeyCode, KeyModifiers, KeyEvent};
-use x_protocol::crossterm::terminal;
 use x_protocol::state::InputState;
 
 #[derive(Debug, Clone)]
@@ -15,7 +14,21 @@ impl Input {
         match code.modifiers {
             KeyModifiers::CONTROL => self.ctrl(code, state),
             KeyModifiers::ALT => self.alt(code),
+            KeyModifiers::SHIFT => self.shift(code),
             KeyModifiers::NONE => self.normal_input(code),
+            _ => {}
+        }
+    }
+
+    pub fn clear(&mut self) {
+        self.cursor = 0;
+        self.user_input.clear();
+    }
+
+    fn shift(&mut self, code: &KeyEvent) {
+        match code.code {
+            KeyCode::Char(c) => self.user_input.push(c),
+            KeyCode::Enter => self.user_input.push('\n'),
             _ => {}
         }
     }
@@ -46,7 +59,7 @@ impl Input {
             },
             KeyCode::Up => self.state = InputState::Up,
             KeyCode::Down => self.state = InputState::Down,
-            KeyCode::Enter => self.state = InputState::NewLine,
+            KeyCode::Enter => self.state = InputState::Execute,
             KeyCode::Backspace => {
                 if self.cursor != 0 {
                     self.user_input.remove((self.cursor - 1) as usize);
