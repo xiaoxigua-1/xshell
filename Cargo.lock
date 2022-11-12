@@ -330,5 +330,5 @@ dependencies = [
 name = "xshell"
 version = "0.1.0"
 dependencies = [
- "x-protocol",
+ "x-engine",
 ]

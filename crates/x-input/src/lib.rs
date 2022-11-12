@@ -1,6 +1,6 @@
-use x_protocol::ShellState;
-use x_protocol::crossterm::event::{KeyCode, KeyModifiers, KeyEvent};
+use x_protocol::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use x_protocol::state::InputState;
+use x_protocol::ShellState;
 
 #[derive(Debug, Clone)]
 pub struct Input {
@@ -11,12 +11,10 @@ pub struct Input {
 
 impl Input {
     pub fn input(&mut self, code: &KeyEvent, state: &mut ShellState) {
+        self.state = InputState::NONE;
         match code.modifiers {
             KeyModifiers::CONTROL => self.ctrl(code, state),
-            KeyModifiers::ALT => self.alt(code),
-            KeyModifiers::SHIFT => self.shift(code),
-            KeyModifiers::NONE => self.normal_input(code),
-            _ => {}
+            _ => self.normal_input(code),
         }
     }
 
@@ -25,38 +23,26 @@ impl Input {
         self.user_input.clear();
     }
 
-    fn shift(&mut self, code: &KeyEvent) {
-        match code.code {
-            KeyCode::Char(c) => self.user_input.push(c),
-            KeyCode::Enter => self.user_input.push('\n'),
-            _ => {}
-        }
-    }
-
     fn ctrl(&mut self, code: &KeyEvent, state: &mut ShellState) {
         if let KeyCode::Char(c) = code.code {
-            self.user_input.push_str(format!("^{}", c.to_ascii_uppercase()).as_str());
+            self.user_input
+                .push_str(format!("^{}", c.to_ascii_uppercase()).as_str());
             match c {
                 'd' => {
                     state.is_exit = true;
-                },
+                }
                 'c' => self.state = InputState::NewLine,
                 _ => {}
             }
         }
     }
 
-    fn alt(&self, code: &KeyEvent) {
-
-    }
-
     fn normal_input(&mut self, code: &KeyEvent) {
-        self.state = InputState::NONE;
         match code.code {
             KeyCode::Char(c) => {
                 self.cursor += 1;
                 self.user_input.push(c);
-            },
+            }
             KeyCode::Up => self.state = InputState::Up,
             KeyCode::Down => self.state = InputState::Down,
             KeyCode::Enter => self.state = InputState::Execute,
@@ -73,6 +59,10 @@ impl Input {
 
 impl Default for Input {
     fn default() -> Self {
-        Input { user_input: String::new(), cursor: 0, state: InputState::NONE }
+        Input {
+            user_input: String::new(),
+            cursor: 0,
+            state: InputState::NONE,
+        }
     }
 }

@@ -11,7 +11,7 @@ use std::ptr::read;
 use winsafe::GetUserName;
 
 #[cfg(target_family = "unix")]
-fn get_username() -> &'static str { 
+fn get_username() -> &'static str {
     unsafe {
         let pwd_pointer: *mut passwd = libc::getpwuid(libc::geteuid());
         let pwd = read(pwd_pointer);
@@ -32,4 +32,4 @@ pub fn whoami() -> &'static str {
 fn test_whoami() {
     assert!(!whoami().is_empty());
     println!("{}", whoami());
-} 
+}

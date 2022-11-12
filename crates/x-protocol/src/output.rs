@@ -1,5 +1,5 @@
 pub struct Output {
-    pub string: String
+    pub string: String,
 }
 
 impl Output {
@@ -10,6 +10,8 @@ impl Output {
 
 impl Default for Output {
     fn default() -> Self {
-        Output { string: String::new() }
+        Output {
+            string: String::new(),
+        }
     }
 }

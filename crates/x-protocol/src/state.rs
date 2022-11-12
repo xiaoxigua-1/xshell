@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use x_util::{whoami, home_dir};
+use x_util::{home_dir, whoami};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum InputState {
@@ -9,7 +9,7 @@ pub enum InputState {
     Down,
     Left,
     Right,
-    NONE
+    NONE,
 }
 
 #[derive(Clone, Debug)]
@@ -21,7 +21,11 @@ pub struct ShellState {
 
 impl ShellState {
     pub fn new(dir: PathBuf, login: String) -> Self {
-        ShellState { path: Some(dir), login, is_exit: false }
+        ShellState {
+            path: Some(dir),
+            login,
+            is_exit: false,
+        }
     }
 
     pub fn exit(&mut self) {
@@ -31,7 +35,11 @@ impl ShellState {
 
 impl Default for ShellState {
     fn default() -> Self {
-        ShellState { path: home_dir(), login: whoami().into(), is_exit: false }
+        ShellState {
+            path: home_dir(),
+            login: whoami().into(),
+            is_exit: false,
+        }
     }
 }
 
@@ -40,4 +48,3 @@ fn test() {
     let state = ShellState::default();
     println!("{:?}", state);
 }
-
