@@ -26,7 +26,19 @@ impl XShellEvent {
                 Ok(output) => output.string,
                 Err(e) => format!("{:?}", e),
             };
-            render.render(&input.state, output_str, input.user_input.len() - input.cursor + 1, &self.state)?;
+            let cursor_index = {
+                let mut index = 0;
+
+                input.user_input[input.cursor..input.user_input.len()].chars().for_each(|c| {
+                    index += if c.is_ascii() {
+                        1
+                    } else {
+                        2
+                    };
+                });
+                index + 1
+            };
+            render.render(&input.state, output_str, cursor_index, &self.state)?;
 
             match read()? {
                 Event::Key(key) => input.input(&key, &mut self.state),

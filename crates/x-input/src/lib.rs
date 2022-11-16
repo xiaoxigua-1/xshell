@@ -9,6 +9,14 @@ pub struct Input {
     pub state: InputState,
 }
 
+fn char_len(c: &char) -> usize {
+    if c.is_ascii() {
+        1
+    } else {
+        3
+    }
+}
+
 impl Input {
     pub fn input(&mut self, code: &KeyEvent, state: &mut ShellState) {
         self.state = InputState::NONE;
@@ -41,28 +49,37 @@ impl Input {
         match code.code {
             KeyCode::Char(c) => {
                 self.user_input.insert(self.cursor, c);
-                self.cursor += 1;
+                self.cursor += char_len(&c); 
             }
             KeyCode::Up => self.state = InputState::Up,
             KeyCode::Down => self.state = InputState::Down,
-            KeyCode::Left => {
-                if self.cursor != 0 {
-                    self.cursor -= 1;
-                }
-            }
-            KeyCode::Right => {
-                if self.cursor < self.user_input.len() {
-                    self.cursor += 1;
-                }
-            }
+            KeyCode::Left => self.left(), 
+            KeyCode::Right => self.right(), 
             KeyCode::Enter => self.state = InputState::Execute,
             KeyCode::Backspace => {
-                if self.cursor != 0 {
-                    self.user_input.remove((self.cursor - 1) as usize);
-                    self.cursor -= 1;
+                self.left();
+                if self.user_input.len() != 0 {
+                    self.user_input.remove(self.cursor);
                 }
             }
             _ => {}
+        }
+    }
+
+    fn left(&mut self) {
+        if self.cursor != 0 {
+            if let Some(c) = &self.user_input[0..self.cursor].chars().last() {
+                self.cursor -= char_len(c) ;
+
+            }
+        }
+    }
+
+    fn right(&mut self) {
+        if self.cursor <= self.user_input.len() {
+            if let Some(c) = &self.user_input[self.cursor..self.user_input.len()].chars().next() {
+                self.cursor += char_len(c);
+            }
         }
     }
 }

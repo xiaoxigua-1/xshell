@@ -2,7 +2,7 @@ use std::fmt::Display;
 use std::io::{stdout, Stdout};
 use x_protocol::crossterm::cursor::{MoveToColumn, MoveLeft};
 use x_protocol::crossterm::execute;
-use x_protocol::crossterm::style::Print;
+use x_protocol::crossterm::style::{Print, Stylize};
 use x_protocol::crossterm::terminal::{Clear, ClearType};
 use x_protocol::crossterm::Result;
 use x_protocol::{InputState, ShellState};
@@ -46,8 +46,8 @@ impl Render {
             &self.stdout,
             Print(format!(
                 "{}@{}: ",
-                state.login,
-                state.path.clone().unwrap().as_path().to_str().unwrap()
+                state.login.clone().green(),
+                state.path.clone().unwrap().as_path().to_str().unwrap().blue()
             ))
         )
     }
