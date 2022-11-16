@@ -1,6 +1,6 @@
 use std::fmt::Display;
 use std::io::{stdout, Stdout};
-use x_protocol::crossterm::cursor::{MoveToColumn, MoveUp};
+use x_protocol::crossterm::cursor::{MoveToColumn, MoveLeft};
 use x_protocol::crossterm::execute;
 use x_protocol::crossterm::style::Print;
 use x_protocol::crossterm::terminal::{Clear, ClearType};
@@ -16,10 +16,11 @@ impl Render {
         &mut self,
         state: &InputState,
         input: String,
+        cursor: usize,
         shell_state: &ShellState,
     ) -> Result<()> {
         self.output_state(shell_state)?;
-        self.user_input(input)?;
+        self.user_input(input, cursor)?;
         match state {
             InputState::NewLine | InputState::Execute => self.new_line(shell_state)?,
             _ => {}
@@ -36,8 +37,8 @@ impl Render {
         execute!(&self.stdout, Clear(ClearType::CurrentLine), MoveToColumn(0))
     }
 
-    fn user_input<T: Display>(&self, input: T) -> Result<()> {
-        execute!(&self.stdout, Print(input))
+    fn user_input<T: Display>(&self, input: T, cursor: usize) -> Result<()> {
+        execute!(&self.stdout, Print(input), MoveLeft(cursor as u16))
     }
 
     pub fn output_state(&self, state: &ShellState) -> Result<()> {

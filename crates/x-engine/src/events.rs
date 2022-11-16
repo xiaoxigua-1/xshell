@@ -1,5 +1,3 @@
-use std::io::{BufReader, Stdin};
-
 use x_input::Input;
 use x_parser::parser;
 use x_protocol::crossterm::event::{read, Event};
@@ -28,7 +26,7 @@ impl XShellEvent {
                 Ok(output) => output.string,
                 Err(e) => format!("{:?}", e),
             };
-            render.render(&input.state, output_str, &self.state)?;
+            render.render(&input.state, output_str, input.user_input.len() - input.cursor + 1, &self.state)?;
 
             match read()? {
                 Event::Key(key) => input.input(&key, &mut self.state),

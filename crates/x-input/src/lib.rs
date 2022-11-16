@@ -5,7 +5,7 @@ use x_protocol::ShellState;
 #[derive(Debug, Clone)]
 pub struct Input {
     pub user_input: String,
-    pub cursor: u32,
+    pub cursor: usize,
     pub state: InputState,
 }
 
@@ -40,11 +40,21 @@ impl Input {
     fn normal_input(&mut self, code: &KeyEvent) {
         match code.code {
             KeyCode::Char(c) => {
+                self.user_input.insert(self.cursor, c);
                 self.cursor += 1;
-                self.user_input.push(c);
             }
             KeyCode::Up => self.state = InputState::Up,
             KeyCode::Down => self.state = InputState::Down,
+            KeyCode::Left => {
+                if self.cursor != 0 {
+                    self.cursor -= 1;
+                }
+            }
+            KeyCode::Right => {
+                if self.cursor < self.user_input.len() {
+                    self.cursor += 1;
+                }
+            }
             KeyCode::Enter => self.state = InputState::Execute,
             KeyCode::Backspace => {
                 if self.cursor != 0 {

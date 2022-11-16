@@ -8,5 +8,5 @@ pub fn parser(input: &mut Input) -> Result<Output> {
         _ => {}
     }
 
-    Ok(Output::new(input_str))
+    Ok(Output::new(format!("{} ", input_str)))
 }
