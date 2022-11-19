@@ -140,11 +140,32 @@ mod test_lexer {
     #[test]
     fn test_number() {
         let s = r#"0b1101 123"#;
-        let mut lexer = Lexer::new(s.chars());
         let assert_token_arr = [Int("0b1101".into()), Space(' '), Int("123".into()), EOF];
+    
+        assert_token(s, &assert_token_arr);
+    }
 
-        for assert_token in assert_token_arr {
-            assert_eq!(assert_token, lexer.next_token().unwrap().ty);
+    #[test]
+    fn test_ident() {
+        let s = r#"abc_1 cc123 你好"#;
+        let assert_token_arr = [Ident("abc_1".into()), Space(' '), Ident("cc123".into()), Space(' '), Ident("你好".into()), EOF];
+        assert_token(s, &assert_token_arr);
+    }
+
+    #[test]
+    fn test_string() {
+        let s = r#""abc"'abc'"#;
+        let assert_token_arr = [Str("abc".into()), Str("abc".into()), EOF];
+    
+        assert_token(s, &assert_token_arr);
+
+    }
+
+    fn assert_token(s: &str, arr: &[Tokens]) {
+        let mut lexer = Lexer::new(s.chars());
+
+        for assert_token in arr {
+            assert_eq!(assert_token.clone(), lexer.next_token().unwrap().ty);
         }
     }
 }
