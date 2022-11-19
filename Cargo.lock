@@ -267,12 +267,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f40009d85759725a34da6d89a94e63d7bdc50a862acf0dbc7c8e488f1edcb6f5"
 
 [[package]]
-name = "winsafe"
-version = "0.0.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6efbd0ff6f47f1fbd43348594cebf1c7bcd71f10136ff4f90133c35d625e14c"
-
-[[package]]
 name = "x-engine"
 version = "0.1.0"
 dependencies = [
@@ -323,7 +317,7 @@ dependencies = [
  "crossterm 0.25.0",
  "home",
  "libc",
- "winsafe",
+ "winapi",
 ]
 
 [[package]]
