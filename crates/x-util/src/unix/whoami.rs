@@ -9,4 +9,3 @@ pub fn whoami() -> &'static str {
         CStr::from_ptr(pwd.pw_name).to_str().unwrap()
     }
 }
-

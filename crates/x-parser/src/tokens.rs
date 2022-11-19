@@ -12,7 +12,7 @@ pub enum Tokens {
 #[derive(Debug, Clone)]
 pub struct Token {
     pub ty: Tokens,
-    pub span: Range<usize>
+    pub span: Range<usize>,
 }
 
 impl Token {

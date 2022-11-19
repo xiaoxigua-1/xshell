@@ -29,13 +29,11 @@ impl XShellEvent {
             let cursor_index = {
                 let mut index = 0;
 
-                input.user_input[input.cursor..input.user_input.len()].chars().for_each(|c| {
-                    index += if c.is_ascii() {
-                        1
-                    } else {
-                        2
-                    };
-                });
+                input.user_input[input.cursor..input.user_input.len()]
+                    .chars()
+                    .for_each(|c| {
+                        index += if c.is_ascii() { 1 } else { 2 };
+                    });
                 index + 1
             };
             render.render(&input.state, output_str, cursor_index, &self.state)?;

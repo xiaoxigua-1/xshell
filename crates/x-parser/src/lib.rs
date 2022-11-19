@@ -1,9 +1,9 @@
 mod lexer;
 mod tokens;
 
+use lexer::Lexer;
 use x_input::Input;
 use x_protocol::{shell_err::Result, InputState, Output};
-use lexer::Lexer;
 
 pub fn parser(input: &mut Input) -> Result<Output> {
     let input_str = input.user_input.clone();
