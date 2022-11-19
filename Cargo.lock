@@ -282,7 +282,6 @@ name = "x-input"
 version = "0.1.0"
 dependencies = [
  "x-protocol",
- "x-util",
 ]
 
 [[package]]
@@ -305,9 +304,7 @@ dependencies = [
 name = "x-render"
 version = "0.1.0"
 dependencies = [
- "x-input",
  "x-protocol",
- "x-util",
 ]
 
 [[package]]
