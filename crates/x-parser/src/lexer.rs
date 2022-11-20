@@ -63,7 +63,7 @@ impl<'a> Lexer<'a> {
             '0' => {
                 if let Some((_, c)) = self.input_stream.peek() {
                     match c {
-                        'b' => self.binary_lex(&mut int_s)?,
+                        'b' => self.binary_lex(i, &mut int_s)?,
                         _ => self.decimal_lex(i, &mut int_s)?,
                     }
                 }
@@ -87,17 +87,9 @@ impl<'a> Lexer<'a> {
                     }
                     c if c.is_ascii_punctuation() || c.is_whitespace() => break Ok(()),
                     _ => {
-                        let mut end = start.clone();
-                        loop {
-                            if let Some((i, _)) = self
-                                .input_stream
-                                .next_if(|(_, c)| !c.is_whitespace() && !c.is_ascii_punctuation())
-                            {
-                                end = i + 1;
-                            } else {
-                                break;
-                            }
-                        }
+                        let end = self.eat(start.clone(), |c| {
+                            !c.is_whitespace() && !c.is_ascii_punctuation()
+                        });
                         break Err(ShellErr::Syntax(start..end, "".into()));
                     }
                 }
@@ -107,7 +99,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn binary_lex(&mut self, s: &mut String) -> Result<()> {
+    fn binary_lex(&mut self, start: usize, s: &mut String) -> Result<()> {
         self.input_stream.next();
         s.push('b');
         loop {
@@ -117,7 +109,13 @@ impl<'a> Lexer<'a> {
                         let (_, c) = self.input_stream.next().unwrap();
                         s.push(c);
                     }
-                    _ => break Ok(()),
+                    c if c.is_ascii_punctuation() || c.is_whitespace() => break Ok(()),
+                    _ => {
+                        let end = self.eat(start.clone(), |c| {
+                            !c.is_whitespace() && !c.is_ascii_punctuation()
+                        });
+                        break Err(ShellErr::Syntax(start..end, "".into()));
+                    }
                 }
             } else {
                 break Ok(());
@@ -141,6 +139,23 @@ impl<'a> Lexer<'a> {
                 break Ok(Token::new(Tokens::Ident(s), start..(self.end.end - 1)));
             }
         }
+    }
+
+    fn eat<F>(&mut self, start: usize, func: F) -> usize
+    where
+        F: FnOnce(&char) -> bool + Copy,
+    {
+        let mut end = start;
+
+        loop {
+            if let Some((i, _)) = self.input_stream.next_if(|(_, c)| func(c)) {
+                end = i;
+            } else {
+                break;
+            }
+        }
+
+        end
     }
 }
 
