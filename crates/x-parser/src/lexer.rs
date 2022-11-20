@@ -4,7 +4,7 @@ use std::{
     str::Chars,
 };
 
-use x_protocol::Result;
+use x_protocol::{Result, ShellErr};
 
 use crate::tokens::{Token, Tokens};
 
@@ -27,7 +27,7 @@ impl<'a> Lexer<'a> {
         Ok(if let Some((i, c)) = self.input_stream.next() {
             match c {
                 c if c.is_whitespace() => Token::new(Tokens::Space(c), i..i),
-                '"' | '\'' => self.str_lex(i, c == '"')?,
+                '"' | '\'' => self.str_lex((i, c), c == '"')?,
                 '0'..='9' => self.int_lex((i, c))?,
                 _ => self.ident_lex((i, c))?,
             }
@@ -36,18 +36,19 @@ impl<'a> Lexer<'a> {
         })
     }
 
-    fn str_lex(&mut self, start: usize, double: bool) -> Result<Token> {
-        let mut s = String::new();
+    fn str_lex(&mut self, (start, c): (usize, char), double: bool) -> Result<Token> {
+        let mut s = String::from(c);
 
         loop {
             if let Some((i, c)) = self.input_stream.next() {
+                s.push(c);
                 match c {
                     c if double && c == '"' => break Ok(Token::new(Tokens::Str(s), start..i)),
                     c if !double && c == '\'' => break Ok(Token::new(Tokens::Str(s), start..i)),
-                    _ => s.push(c),
+                    _ => {}
                 }
             } else {
-                break Err(x_protocol::ShellErr::Syntax(
+                break Err(x_protocol::ShellErr::Unterminated(
                     start..start,
                     "unterminated string".into(),
                 ));
@@ -63,11 +64,11 @@ impl<'a> Lexer<'a> {
                 if let Some((_, c)) = self.input_stream.peek() {
                     match c {
                         'b' => self.binary_lex(&mut int_s)?,
-                        _ => self.decimal_lex(&mut int_s)?,
+                        _ => self.decimal_lex(i, &mut int_s)?,
                     }
                 }
             }
-            _ => self.decimal_lex(&mut int_s)?,
+            _ => self.decimal_lex(i, &mut int_s)?,
         }
 
         Ok(Token::new(
@@ -76,7 +77,7 @@ impl<'a> Lexer<'a> {
         ))
     }
 
-    fn decimal_lex(&mut self, s: &mut String) -> Result<()> {
+    fn decimal_lex(&mut self, start: usize, s: &mut String) -> Result<()> {
         loop {
             if let Some((_, c)) = self.input_stream.peek() {
                 match c {
@@ -84,7 +85,21 @@ impl<'a> Lexer<'a> {
                         let (_, c) = self.input_stream.next().unwrap();
                         s.push(c);
                     }
-                    _ => break Ok(()),
+                    c if c.is_ascii_punctuation() || c.is_whitespace() => break Ok(()),
+                    _ => {
+                        let mut end = start.clone();
+                        loop {
+                            if let Some((i, _)) = self
+                                .input_stream
+                                .next_if(|(_, c)| !c.is_whitespace() && !c.is_ascii_punctuation())
+                            {
+                                end = i + 1;
+                            } else {
+                                break;
+                            }
+                        }
+                        break Err(ShellErr::Syntax(start..end, "".into()));
+                    }
                 }
             } else {
                 break Ok(());
@@ -141,14 +156,21 @@ mod test_lexer {
     fn test_number() {
         let s = r#"0b1101 123"#;
         let assert_token_arr = [Int("0b1101".into()), Space(' '), Int("123".into()), EOF];
-    
+
         assert_token(s, &assert_token_arr);
     }
 
     #[test]
     fn test_ident() {
         let s = r#"abc_1 cc123 你好"#;
-        let assert_token_arr = [Ident("abc_1".into()), Space(' '), Ident("cc123".into()), Space(' '), Ident("你好".into()), EOF];
+        let assert_token_arr = [
+            Ident("abc_1".into()),
+            Space(' '),
+            Ident("cc123".into()),
+            Space(' '),
+            Ident("你好".into()),
+            EOF,
+        ];
         assert_token(s, &assert_token_arr);
     }
 
@@ -156,9 +178,8 @@ mod test_lexer {
     fn test_string() {
         let s = r#""abc"'abc'"#;
         let assert_token_arr = [Str("abc".into()), Str("abc".into()), EOF];
-    
-        assert_token(s, &assert_token_arr);
 
+        assert_token(s, &assert_token_arr);
     }
 
     fn assert_token(s: &str, arr: &[Tokens]) {
