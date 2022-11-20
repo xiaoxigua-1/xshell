@@ -42,9 +42,8 @@ impl<'a> Lexer<'a> {
         loop {
             if let Some((i, c)) = self.input_stream.next() {
                 s.push(c);
-                match c {
-                    c if (double && c == '"') || (!double && c == '\'') => break Ok(Token::new(Tokens::Str(s), start..i)),
-                    _ => {}
+                if (double && c == '"') || (!double && c == '\'') {
+                    break Ok(Token::new(Tokens::Str(s), start..i));
                 }
             } else {
                 break Err(x_protocol::ShellErr::Unterminated(
