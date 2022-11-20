@@ -43,8 +43,7 @@ impl<'a> Lexer<'a> {
             if let Some((i, c)) = self.input_stream.next() {
                 s.push(c);
                 match c {
-                    c if double && c == '"' => break Ok(Token::new(Tokens::Str(s), start..i)),
-                    c if !double && c == '\'' => break Ok(Token::new(Tokens::Str(s), start..i)),
+                    c if (double && c == '"') || (!double && c == '\'') => break Ok(Token::new(Tokens::Str(s), start..i)),
                     _ => {}
                 }
             } else {
