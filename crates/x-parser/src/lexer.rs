@@ -155,7 +155,7 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        end
+        end + 1
     }
 }
 
