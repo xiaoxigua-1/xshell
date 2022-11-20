@@ -5,7 +5,7 @@ use lexer::Lexer;
 use tokens::{Token, Tokens};
 use x_input::Input;
 use x_protocol::{
-    crossterm::style::{Color, Stylize},
+    crossterm::style::Stylize,
     shell_err::Result,
     InputState, Output, ShellErr,
 };
