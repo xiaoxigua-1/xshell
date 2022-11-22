@@ -1,6 +1,6 @@
 use std::fmt::Display;
 use std::io::{stdout, Stdout};
-use x_protocol::crossterm::cursor::{MoveLeft, MoveToColumn};
+use x_protocol::crossterm::cursor::{MoveLeft, MoveToColumn, SavePosition, RestorePosition};
 use x_protocol::crossterm::execute;
 use x_protocol::crossterm::style::{Print, Stylize};
 use x_protocol::crossterm::terminal::{Clear, ClearType};
@@ -19,7 +19,6 @@ impl Render {
         cursor: usize,
         shell_state: &ShellState,
     ) -> Result<()> {
-        self.output_state(shell_state)?;
         self.user_input(input, cursor)?;
         match state {
             InputState::NewLine | InputState::Execute => self.new_line(shell_state)?,
@@ -34,7 +33,7 @@ impl Render {
     }
 
     pub fn clear_line(&self) -> Result<()> {
-        execute!(&self.stdout, Clear(ClearType::CurrentLine), MoveToColumn(0))
+        execute!(&self.stdout, RestorePosition, Clear(ClearType::FromCursorDown))
     }
 
     fn user_input<T: Display>(&self, input: T, cursor: usize) -> Result<()> {
@@ -55,7 +54,8 @@ impl Render {
                     .to_str()
                     .unwrap()
                     .blue()
-            ))
+            )),
+            SavePosition
         )
     }
 }
@@ -65,3 +65,4 @@ impl Default for Render {
         Render { stdout: stdout() }
     }
 }
+

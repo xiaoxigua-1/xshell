@@ -20,6 +20,7 @@ impl XShellEvent {
         let mut input = Input::default();
 
         enable_raw_mode()?;
+        render.output_state(&self.state)?;
         while !self.state.is_exit {
             render.clear_line()?;
             let output_str = match parser(&mut input) {

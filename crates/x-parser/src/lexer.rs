@@ -14,6 +14,12 @@ pub struct Lexer<'a> {
 }
 
 impl<'a> Lexer<'a> {
+    /// # Create a new Lexer.
+    /// ## Example
+    /// ```
+    /// let mut s = r#"123abc"#;
+    /// let lexer = Lexer::new(s.chars());
+    /// ```
     pub fn new(chars: Chars<'a>) -> Self {
         let end = chars.clone().count();
         Lexer {
@@ -56,17 +62,18 @@ impl<'a> Lexer<'a> {
 
     fn int_lex(&mut self, (i, c): (usize, char)) -> Result<Token> {
         let mut int_s = String::from(c);
-
-        match c {
-            '0' => {
-                if let Some((_, c)) = self.input_stream.peek() {
-                    match c {
-                        'b' => self.binary_lex(i, &mut int_s)?,
-                        _ => self.decimal_lex(i, &mut int_s)?,
-                    }
+        
+        if c == '0' {
+            if let Some((_, c)) = self.input_stream.peek() {
+                match c {
+                    // Binary number.
+                    'b' => self.binary_lex(i, &mut int_s)?,
+                    // Decimal number. 
+                    _ => self.decimal_lex(i, &mut int_s)?,
                 }
             }
-            _ => self.decimal_lex(i, &mut int_s)?,
+        } else {
+            self.decimal_lex(i, &mut int_s)?
         }
 
         Ok(Token::new(
@@ -126,19 +133,19 @@ impl<'a> Lexer<'a> {
 
         loop {
             if let Some((i, c)) = self.input_stream.peek() {
-                match c {
-                    c if !c.is_ascii_punctuation() && !c.is_whitespace() || c == &'_' => {
-                        let (_, c) = self.input_stream.next().unwrap();
-                        s.push(c);
-                    }
-                    _ => break Ok(Token::new(Tokens::Ident(s), start..(i - 1))),
-                }
+               if !c.is_ascii_punctuation() && !c.is_whitespace() || c == &'_' {
+                    let (_, c) = self.input_stream.next().unwrap();
+                    s.push(c);
+                } else {
+                    break Ok(Token::new(Tokens::Ident(s), start..(i - 1)))
+                } 
             } else {
                 break Ok(Token::new(Tokens::Ident(s), start..(self.end.end - 1)));
             }
         }
     }
 
+    /// Eat 
     fn eat<F>(&mut self, start: usize, func: F) -> usize
     where
         F: FnOnce(&char) -> bool + Copy,
