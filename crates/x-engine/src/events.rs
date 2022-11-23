@@ -1,5 +1,5 @@
 use x_input::Input;
-use x_parser::parser;
+use x_parser::{parser, Parser};
 use x_protocol::crossterm::event::{read, Event};
 use x_protocol::crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use x_protocol::crossterm::Result;
