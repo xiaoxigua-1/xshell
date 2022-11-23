@@ -6,11 +6,20 @@ use std::{
 
 use x_protocol::{Result, ShellErr};
 
-use crate::tokens::{Token, Tokens};
+use crate::tokens::{Token, Tokens, Kwd};
 
 pub struct Lexer<'a> {
     input_stream: Peekable<Enumerate<Chars<'a>>>,
     end: Range<usize>,
+    is_eof: bool,
+}
+
+fn is_kwd(s: String) -> Tokens {
+    if let Some(kwd) = Kwd::new(&s) {
+        Tokens::Keyword(kwd)
+    } else {
+        Tokens::Ident(s)
+    }
 }
 
 impl<'a> Lexer<'a> {
@@ -25,6 +34,7 @@ impl<'a> Lexer<'a> {
         Lexer {
             input_stream: chars.enumerate().peekable(),
             end: end..end,
+            is_eof: false,
         }
     }
 
@@ -32,12 +42,14 @@ impl<'a> Lexer<'a> {
     pub fn next_token(&mut self) -> Result<Token> {
         Ok(if let Some((i, c)) = self.input_stream.next() {
             match c {
+                '\n' => Token::new(Tokens::NewLine, i..i),
                 c if c.is_whitespace() => Token::new(Tokens::Space(c), i..i),
                 '"' | '\'' => self.str_lex((i, c), c == '"')?,
                 '0'..='9' => self.int_lex((i, c))?,
                 _ => self.ident_lex((i, c))?,
             }
         } else {
+            self.is_eof = true;
             Token::new(Tokens::EOF, self.end.clone())
         })
     }
@@ -68,6 +80,8 @@ impl<'a> Lexer<'a> {
                 match c {
                     // Binary number.
                     'b' => self.binary_lex(i, &mut int_s)?,
+                    // Hex number.
+                    'x' => self.hex_lex(i, &mut int_s)?,
                     // Decimal number. 
                     _ => self.decimal_lex(i, &mut int_s)?,
                 }
@@ -86,7 +100,7 @@ impl<'a> Lexer<'a> {
         loop {
             if let Some((_, c)) = self.input_stream.peek() {
                 match c {
-                    '0'..='9' => {
+                    '0'..='9' | '.' => {
                         let (_, c) = self.input_stream.next().unwrap();
                         s.push(c);
                     }
@@ -102,6 +116,31 @@ impl<'a> Lexer<'a> {
                 break Ok(());
             }
         }
+    }
+
+    fn hex_lex(&mut self, start: usize, s: &mut String) -> Result<()> {
+        self.input_stream.next();
+        s.push('x');
+        loop {
+            if let Some((_, c)) = self.input_stream.peek() {
+                match c {
+                    '0'..='9' | 'a'..='f' | 'A'..='F' => {
+                        let (_, c) = self.input_stream.next().unwrap();
+                        s.push(c);
+                    }
+                    c if c.is_ascii_punctuation() || c.is_whitespace() => break Ok(()),
+                    _ => {
+                        let end = self.eat(start.clone(), |c| {
+                            !c.is_whitespace() && !c.is_ascii_punctuation()
+                        });
+                        break Err(ShellErr::Syntax(start..end, "".into()));
+                    }
+                }
+            } else {
+                break Ok(());
+            }
+        }
+
     }
 
     fn binary_lex(&mut self, start: usize, s: &mut String) -> Result<()> {
@@ -137,13 +176,14 @@ impl<'a> Lexer<'a> {
                     let (_, c) = self.input_stream.next().unwrap();
                     s.push(c);
                 } else {
-                    break Ok(Token::new(Tokens::Ident(s), start..(i - 1)))
-                } 
+                    break Ok(Token::new(is_kwd(s), start..(i - 1)))
+                }
             } else {
-                break Ok(Token::new(Tokens::Ident(s), start..(self.end.end - 1)));
+                break Ok(Token::new(is_kwd(s), start..(self.end.end - 1)));
             }
         }
     }
+
 
     /// Eat 
     fn eat<F>(&mut self, start: usize, func: F) -> usize
@@ -161,6 +201,18 @@ impl<'a> Lexer<'a> {
         }
 
         end + 1
+    }
+}
+
+impl<'a> Iterator for Lexer<'a> {
+    type Item = Result<Token>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if !self.is_eof {
+            Some(self.next_token())
+        } else {
+            None
+        }
     }
 }
 

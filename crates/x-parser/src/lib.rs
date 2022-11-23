@@ -1,56 +1,76 @@
 mod lexer;
 mod tokens;
 
+use std::iter::Peekable;
+
 use lexer::Lexer;
-use tokens::{Token, Tokens};
+use tokens::{Token, Tokens, Kwd};
 use x_input::Input;
 use x_protocol::{
-    crossterm::style::Stylize,
     shell_err::Result,
-    InputState, Output, ShellErr,
+    InputState, Output, ast::AST,
 };
 
-pub fn parser(input: &mut Input) -> Result<Output> {
+pub fn repl(input: &mut Input) -> Result<Output> {
     let user_input = input.user_input.clone();
     let mut lexer = Lexer::new(user_input.chars());
-    let mut output = String::new();
-
+    let raw_input = input.user_input.clone();
+    let parser = Parser::new(lexer, raw_input);
+    
     match input.state {
-        InputState::Execute | InputState::NewLine => input.clear(),
+        InputState::NewLine => input.clear(),
         _ => {}
     }
 
-    loop {
-        match lexer.next_token() {
-            Ok(token) => {
-                output.push_str(&highlighter(&token));
-                if token.ty == Tokens::EOF {
-                    break;
-                }
-            }
-            Err(e) => match e {
-                ShellErr::Unterminated(range, _) => output.push_str(&format!(
-                    "{}{}",
-                    &user_input[range.start..range.start + 1].red(),
-                    &user_input[range.start + 1..].green()
-                )),
-                ShellErr::Syntax(range, _) => {
-                    output.push_str(&format!("{}", &user_input[range].red()))
-                }
-            },
-        }
-    }
-
-    Ok(Output::new(format!("{} ", output)))
+    Ok(Output::new(format!(" ")))
 }
 
-fn highlighter(token: &Token) -> String {
-    match token.ty.clone() {
-        Tokens::Str(s) => s.green(),
-        Tokens::Int(i) => i.blue(),
-        Tokens::Space(s) => s.to_string().reset(),
-        Tokens::Ident(ident) => ident.reset(),
-        Tokens::EOF => "".to_string().reset(),
+pub struct Parser<'a> {
+    lexer: Peekable<Lexer<'a>>,
+    raw_input: String,
+    output: String,
+}
+
+impl<'a> Parser<'a> {
+    pub fn new(lexer: Lexer<'a>, raw_input: String) -> Self {
+        Parser { lexer: lexer.peekable(), raw_input, output: String::new() }
     }
-    .to_string()
+
+    fn parse(&mut self) -> Result<Option<AST>> {
+        Ok(if let Some(token) = self.lexer.next() {
+            let token = token?;
+            Some(match &token.ty {
+                Tokens::Keyword(k) => self.builtin(k)?,
+                _ => self.command(token)?
+            })
+        } else {
+            None
+        })
+    }
+
+    fn builtin(&mut self, kwd: &Kwd) -> Result<AST> {
+        self.eat_whitespace()?;
+        
+        Ok(AST::Function)
+    }
+
+    fn command(&mut self, command: Token) -> Result<AST> {
+        Ok(AST::Function)
+    }
+
+    fn eat_whitespace(&mut self) -> Result<()> {
+        loop {
+            if let Some(t) = self.lexer.peek() {
+                match t {
+                    Ok(t) => match t.ty {
+                        Tokens::Space(_) => self.lexer.next(),
+                        _ => break Ok(())
+                    },
+                    Err(_) => break Ok(())
+                };
+            } else {
+                break Ok(());
+            };
+        }
+    }
 }
