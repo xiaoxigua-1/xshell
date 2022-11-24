@@ -36,7 +36,7 @@ macro_rules! Gen {
 pub enum Tokens {
     Ident(String),
     Keyword(Kwd),
-    Symbol(Symbol),
+    Symbol(char),
     Str(String),
     Int(String),
     Space(char),
@@ -49,11 +49,6 @@ Gen!(
     Function => "function"
 );
 
-Gen!(
-    Symbol,
-    Dot => "." 
-);
-
 #[derive(Debug, Clone)]
 pub struct Token {
     pub ty: Tokens,
@@ -63,5 +58,9 @@ pub struct Token {
 impl Token {
     pub fn new(ty: Tokens, span: Range<usize>) -> Self {
         Token { ty, span }
+    }
+
+    pub fn eq(&self, ty: Tokens) -> bool {
+        self.ty == ty
     }
 }

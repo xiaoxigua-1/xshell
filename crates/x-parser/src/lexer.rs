@@ -6,7 +6,7 @@ use std::{
 
 use x_protocol::{Result, ShellErr};
 
-use crate::tokens::{Token, Tokens, Kwd};
+use x_protocol::{Token, Tokens, Kwd};
 
 pub struct Lexer<'a> {
     input_stream: Peekable<Enumerate<Chars<'a>>>,
@@ -14,7 +14,7 @@ pub struct Lexer<'a> {
     is_eof: bool,
 }
 
-fn is_kwd(s: String) -> Tokens {
+fn token_type(s: String) -> Tokens {
     if let Some(kwd) = Kwd::new(&s) {
         Tokens::Keyword(kwd)
     } else {
@@ -45,6 +45,7 @@ impl<'a> Lexer<'a> {
                 '\n' => Token::new(Tokens::NewLine, i..i),
                 c if c.is_whitespace() => Token::new(Tokens::Space(c), i..i),
                 '"' | '\'' => self.str_lex((i, c), c == '"')?,
+                c if c.is_ascii_punctuation() => Token::new(Tokens::Symbol(c), i..i),
                 '0'..='9' => self.int_lex((i, c))?,
                 _ => self.ident_lex((i, c))?,
             }
@@ -176,10 +177,10 @@ impl<'a> Lexer<'a> {
                     let (_, c) = self.input_stream.next().unwrap();
                     s.push(c);
                 } else {
-                    break Ok(Token::new(is_kwd(s), start..(i - 1)))
+                    break Ok(Token::new(token_type(s), start..(i - 1)))
                 }
             } else {
-                break Ok(Token::new(is_kwd(s), start..(self.end.end - 1)));
+                break Ok(Token::new(token_type(s), start..(self.end.end - 1)));
             }
         }
     }
@@ -218,9 +219,7 @@ impl<'a> Iterator for Lexer<'a> {
 
 #[cfg(test)]
 mod test_lexer {
-    use Tokens::*;
-
-    use crate::tokens::Tokens;
+    use x_protocol::{Tokens::*, Tokens};
 
     use super::Lexer;
 
@@ -252,6 +251,23 @@ mod test_lexer {
         let assert_token_arr = [Str("abc".into()), Str("abc".into()), EOF];
 
         assert_token(s, &assert_token_arr);
+    }
+
+    #[test]
+    fn test_symbol() {
+        let s = r#"()"#;
+        let assert_token_arr = [Symbol('('), Symbol(')')];
+
+        assert_token(s, &assert_token_arr);
+    }
+
+    #[test]
+    fn test_call() {
+        let s = r#"a(c)"#;
+        let assert_token_arr = [Ident("a".into()), Symbol('('), Ident("c".into()), Symbol(')')];
+
+        assert_token(s, &assert_token_arr);
+        
     }
 
     fn assert_token(s: &str, arr: &[Tokens]) {
