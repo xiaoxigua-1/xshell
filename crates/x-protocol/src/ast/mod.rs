@@ -2,16 +2,9 @@ use crate::Token;
 
 #[derive(Debug, Clone)]
 pub enum AST {
-    Function {
-        name: Token,
-        parameters: Parameters 
-    },
-    Command {
-        name: String        
-    },
-    Call {
-        name: Token,
-    }
+    Function { name: Token, parameters: Parameters },
+    Command { name: String },
+    Call { name: Token },
 }
 
 #[derive(Debug, Clone)]

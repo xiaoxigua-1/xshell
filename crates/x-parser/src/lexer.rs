@@ -6,7 +6,7 @@ use std::{
 
 use x_protocol::{Result, ShellErr};
 
-use x_protocol::{Token, Tokens, Kwd};
+use x_protocol::{Kwd, Token, Tokens};
 
 pub struct Lexer<'a> {
     input_stream: Peekable<Enumerate<Chars<'a>>>,
@@ -47,6 +47,8 @@ impl<'a> Lexer<'a> {
                 '"' | '\'' => self.str_lex((i, c), c == '"')?,
                 '|' => self.or(i),
                 '&' => self.and(i),
+                // path
+                '.' | '/' | '~' => self.path((i, c))?,
                 c if c.is_ascii_punctuation() && c != '_' => Token::new(Tokens::Symbol(c), i..i),
                 '0'..='9' => self.int_lex((i, c))?,
                 _ => self.ident_lex((i, c))?,
@@ -58,7 +60,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn or(&mut self, start: usize) -> Token {
-        if let Some((end, _)) = self.input_stream.next_if(|(_, c)| { c.eq(&'|') }) {
+        if let Some((end, _)) = self.input_stream.next_if(|(_, c)| c.eq(&'|')) {
             Token::new(Tokens::PipeLine, start..end)
         } else {
             Token::new(Tokens::Or, start..start)
@@ -66,10 +68,54 @@ impl<'a> Lexer<'a> {
     }
 
     fn and(&mut self, start: usize) -> Token {
-        if let Some((end, _)) = self.input_stream.next_if(|(_, c)| { c.eq(&'&') }) {
+        if let Some((end, _)) = self.input_stream.next_if(|(_, c)| c.eq(&'&')) {
             Token::new(Tokens::And, start..end)
         } else {
             Token::new(Tokens::Background, start..start)
+        }
+    }
+
+    fn path(&mut self, (start, c): (usize, char)) -> Result<Token> {
+        let mut path = String::from(c);
+        let mut end = start.clone();
+
+        loop {
+            if let Some((i, c)) = self.input_stream.next_if(|(_, c)| {
+                !c.is_whitespace()
+                    && !c.eq(&'|')
+                    && !c.eq(&'<')
+                    && !c.eq(&'>')
+                    && !c.eq(&':')
+                    && !c.eq(&'"')
+                    && !c.eq(&'?')
+                    && !c.eq(&'*')
+            }) {
+                end += if c.eq(&'\\') {
+                    path.push(self.escape_char()?);
+                    i + 1
+                } else {
+                    i
+                };
+                path.push(c);
+            } else {
+                break;
+            }
+        }
+
+        Ok(Token::new(Tokens::Path(path), start..end))
+    }
+
+    fn escape_char(&mut self) -> Result<char> {
+        if let Some((_, c)) = self.input_stream.next() {
+            Ok(match c {
+                'n' => '\n',
+                'r' => '\r',
+                't' => '\t',
+                '0' => '\0',
+                c @ _ => c,
+            })
+        } else {
+            Err(ShellErr::EOF)
         }
     }
 
@@ -93,7 +139,7 @@ impl<'a> Lexer<'a> {
 
     fn int_lex(&mut self, (i, c): (usize, char)) -> Result<Token> {
         let mut int_s = String::from(c);
-        
+
         if c == '0' {
             if let Some((_, c)) = self.input_stream.peek() {
                 match c {
@@ -101,7 +147,7 @@ impl<'a> Lexer<'a> {
                     'b' => self.binary_lex(i, &mut int_s)?,
                     // Hex number.
                     'x' => self.hex_lex(i, &mut int_s)?,
-                    // Decimal number. 
+                    // Decimal number.
                     _ => self.decimal_lex(i, &mut int_s)?,
                 }
             }
@@ -159,7 +205,6 @@ impl<'a> Lexer<'a> {
                 break Ok(());
             }
         }
-
     }
 
     fn binary_lex(&mut self, start: usize, s: &mut String) -> Result<()> {
@@ -191,11 +236,11 @@ impl<'a> Lexer<'a> {
 
         loop {
             if let Some((i, c)) = self.input_stream.peek() {
-               if !c.is_ascii_punctuation() && !c.is_whitespace() || c.eq(&'_') || c.eq(&'-') {
+                if !c.is_ascii_punctuation() && !c.is_whitespace() || c.eq(&'_') || c.eq(&'-') {
                     let (_, c) = self.input_stream.next().unwrap();
                     s.push(c);
                 } else {
-                    break Ok(Token::new(token_type(s), start..(i - 1)))
+                    break Ok(Token::new(token_type(s), start..(i - 1)));
                 }
             } else {
                 break Ok(Token::new(token_type(s), start..(self.end.end - 1)));
@@ -203,8 +248,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-
-    /// Eat 
+    /// Eat
     fn eat<F>(&mut self, start: usize, func: F) -> usize
     where
         F: FnOnce(&char) -> bool + Copy,
@@ -237,7 +281,7 @@ impl<'a> Iterator for Lexer<'a> {
 
 #[cfg(test)]
 mod test_lexer {
-    use x_protocol::{Tokens::*, Tokens};
+    use x_protocol::{Tokens, Tokens::*};
 
     use super::Lexer;
 
@@ -284,17 +328,30 @@ mod test_lexer {
     #[test]
     fn test_call() {
         let s = r#"a(c)"#;
-        let assert_token_arr = [Ident("a".into()), Symbol('('), Ident("c".into()), Symbol(')'), EOF];
+        let assert_token_arr = [
+            Ident("a".into()),
+            Symbol('('),
+            Ident("c".into()),
+            Symbol(')'),
+            EOF,
+        ];
 
         assert_token(s, &assert_token_arr);
-        
     }
 
     #[test]
     fn test_and_or() {
         let s = r#"|||&&&"#;
         let assert_token_arr = [PipeLine, Or, And, Background, EOF];
-        
+
+        assert_token(s, &assert_token_arr);
+    }
+
+    #[test]
+    fn test_path() {
+        let s = r#"./a%b-c#@!_a/b|||"#;
+        let assert_token_arr = [Path("./a%b-c#@!_a/b".into()), PipeLine, Or];
+
         assert_token(s, &assert_token_arr);
     }
 

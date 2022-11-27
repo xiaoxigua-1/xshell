@@ -1,6 +1,6 @@
 use std::fmt::Display;
 use std::io::{stdout, Stdout};
-use x_protocol::crossterm::cursor::{MoveLeft, MoveToColumn, SavePosition, RestorePosition};
+use x_protocol::crossterm::cursor::{MoveLeft, MoveToColumn, RestorePosition, SavePosition};
 use x_protocol::crossterm::execute;
 use x_protocol::crossterm::style::{Print, Stylize};
 use x_protocol::crossterm::terminal::{Clear, ClearType};
@@ -33,7 +33,11 @@ impl Render {
     }
 
     pub fn clear_line(&self) -> Result<()> {
-        execute!(&self.stdout, RestorePosition, Clear(ClearType::FromCursorDown))
+        execute!(
+            &self.stdout,
+            RestorePosition,
+            Clear(ClearType::FromCursorDown)
+        )
     }
 
     fn user_input<T: Display>(&self, input: T, cursor: usize) -> Result<()> {
@@ -65,4 +69,3 @@ impl Default for Render {
         Render { stdout: stdout() }
     }
 }
-

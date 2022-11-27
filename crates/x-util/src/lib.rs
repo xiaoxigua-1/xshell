@@ -10,6 +10,6 @@ pub use windows::*;
 #[cfg(target_family = "unix")]
 pub use unix::*;
 
+pub use env_logger;
 pub use home::*;
 pub use log::*;
-pub use env_logger;
