@@ -10,3 +10,5 @@ libc = "0.2"
 home = "0.5.4"
 crossterm = "0.25.0"
 winapi = { version = "0.3.9" }
+log = "0.4.17"
+env_logger = "0.10.0"

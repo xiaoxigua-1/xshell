@@ -11,3 +11,5 @@ pub use windows::*;
 pub use unix::*;
 
 pub use home::*;
+pub use log::*;
+pub use env_logger;

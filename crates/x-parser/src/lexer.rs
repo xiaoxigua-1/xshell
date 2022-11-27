@@ -45,7 +45,9 @@ impl<'a> Lexer<'a> {
                 '\n' => Token::new(Tokens::NewLine, i..i),
                 c if c.is_whitespace() => Token::new(Tokens::Space(c), i..i),
                 '"' | '\'' => self.str_lex((i, c), c == '"')?,
-                c if c.is_ascii_punctuation() => Token::new(Tokens::Symbol(c), i..i),
+                '|' => self.or(i),
+                '&' => self.and(i),
+                c if c.is_ascii_punctuation() && c != '_' => Token::new(Tokens::Symbol(c), i..i),
                 '0'..='9' => self.int_lex((i, c))?,
                 _ => self.ident_lex((i, c))?,
             }
@@ -53,6 +55,22 @@ impl<'a> Lexer<'a> {
             self.is_eof = true;
             Token::new(Tokens::EOF, self.end.clone())
         })
+    }
+
+    fn or(&mut self, start: usize) -> Token {
+        if let Some((end, _)) = self.input_stream.next_if(|(_, c)| { c.eq(&'|') }) {
+            Token::new(Tokens::PipeLine, start..end)
+        } else {
+            Token::new(Tokens::Or, start..start)
+        }
+    }
+
+    fn and(&mut self, start: usize) -> Token {
+        if let Some((end, _)) = self.input_stream.next_if(|(_, c)| { c.eq(&'&') }) {
+            Token::new(Tokens::And, start..end)
+        } else {
+            Token::new(Tokens::Background, start..start)
+        }
     }
 
     fn str_lex(&mut self, (start, c): (usize, char), double: bool) -> Result<Token> {
@@ -67,7 +85,7 @@ impl<'a> Lexer<'a> {
             } else {
                 break Err(x_protocol::ShellErr::Unterminated(
                     start..start,
-                    "unterminated string".into(),
+                    "Unterminated string".into(),
                 ));
             }
         }
@@ -173,7 +191,7 @@ impl<'a> Lexer<'a> {
 
         loop {
             if let Some((i, c)) = self.input_stream.peek() {
-               if !c.is_ascii_punctuation() && !c.is_whitespace() || c == &'_' {
+               if !c.is_ascii_punctuation() && !c.is_whitespace() || c.eq(&'_') || c.eq(&'-') {
                     let (_, c) = self.input_stream.next().unwrap();
                     s.push(c);
                 } else {
@@ -233,13 +251,15 @@ mod test_lexer {
 
     #[test]
     fn test_ident() {
-        let s = r#"abc_1 cc123 你好"#;
+        let s = r#"abc_1 cc123 你好 __A"#;
         let assert_token_arr = [
             Ident("abc_1".into()),
             Space(' '),
             Ident("cc123".into()),
             Space(' '),
             Ident("你好".into()),
+            Space(' '),
+            Ident("__A".into()),
             EOF,
         ];
         assert_token(s, &assert_token_arr);
@@ -248,7 +268,7 @@ mod test_lexer {
     #[test]
     fn test_string() {
         let s = r#""abc"'abc'"#;
-        let assert_token_arr = [Str("abc".into()), Str("abc".into()), EOF];
+        let assert_token_arr = [Str(r#""abc""#.into()), Str(r#"'abc'"#.into()), EOF];
 
         assert_token(s, &assert_token_arr);
     }
@@ -256,7 +276,7 @@ mod test_lexer {
     #[test]
     fn test_symbol() {
         let s = r#"()"#;
-        let assert_token_arr = [Symbol('('), Symbol(')')];
+        let assert_token_arr = [Symbol('('), Symbol(')'), EOF];
 
         assert_token(s, &assert_token_arr);
     }
@@ -264,10 +284,18 @@ mod test_lexer {
     #[test]
     fn test_call() {
         let s = r#"a(c)"#;
-        let assert_token_arr = [Ident("a".into()), Symbol('('), Ident("c".into()), Symbol(')')];
+        let assert_token_arr = [Ident("a".into()), Symbol('('), Ident("c".into()), Symbol(')'), EOF];
 
         assert_token(s, &assert_token_arr);
         
+    }
+
+    #[test]
+    fn test_and_or() {
+        let s = r#"|||&&&"#;
+        let assert_token_arr = [PipeLine, Or, And, Background, EOF];
+        
+        assert_token(s, &assert_token_arr);
     }
 
     fn assert_token(s: &str, arr: &[Tokens]) {

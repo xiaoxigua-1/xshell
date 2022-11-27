@@ -7,13 +7,16 @@ pub enum AST {
         parameters: Parameters 
     },
     Command {
-        
+        name: String        
+    },
+    Call {
+        name: Token,
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Parameters {
     pub left: Token,
-    pub variable: Vec<Token>,
+    pub variables: Vec<Token>,
     pub right: Token,
 }

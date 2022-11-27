@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 x-protocol = { path = "../x-protocol" }
 x-input = { path = "../x-input" }
+x-util = { path = "../x-util" }
