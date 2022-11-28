@@ -1,2 +1,5 @@
-pub mod events;
-pub mod execute;
+mod events;
+mod repl;
+mod execute;
+
+pub use events::XShellEvent;

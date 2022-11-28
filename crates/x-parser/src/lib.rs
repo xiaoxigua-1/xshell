@@ -3,43 +3,26 @@ mod syntax;
 
 use std::{fmt::Display, iter::Peekable, ops::Range};
 
-use lexer::Lexer;
-use x_input::Input;
-use x_protocol::{
-    ast::AST, crossterm::style::Stylize, shell_err::Result, InputState, Output, ShellErr,
-};
+pub use lexer::Lexer;
+use x_protocol::ShellErr;
+use x_protocol::ast::AST;
+use x_protocol::shell_err::Result;
 use x_protocol::{crossterm::style::StyledContent, Kwd, Token, Tokens};
-
-pub fn repl(input: &mut Input) -> Result<Output> {
-    let user_input = input.user_input.clone();
-    let mut lexer = Lexer::new(user_input.chars());
-    let raw_input = input.user_input.clone();
-    let parser = Parser::new(lexer, raw_input);
-
-    match input.state {
-        InputState::NewLine => input.clear(),
-        _ => {}
-    }
-
-    Ok(Output::new(format!(" ")))
-}
 
 pub struct Parser<'a> {
     lexer: Peekable<Lexer<'a>>,
-    raw_input: String,
-    output: String,
+    pub output: String,
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(lexer: Lexer<'a>, raw_input: String) -> Self {
+    pub fn new(lexer: Lexer<'a>) -> Self {
         Parser {
             lexer: lexer.peekable(),
-            raw_input,
             output: String::new(),
         }
     }
 
-    fn parse(&mut self) -> Result<Option<AST>> {
+    pub fn parse(&mut self) -> Result<Option<AST>> {
         Ok(if let Some(token) = self.lexer.next() {
             let token = token?;
             self.output_str(&token.ty.default_highlighter());
@@ -193,7 +176,7 @@ mod parser_test {
 
     fn parser(s: &str) {
         let lexer = Lexer::new(s.chars());
-        let mut parser = Parser::new(lexer, s.to_string());
+        let mut parser = Parser::new(lexer);
         let ast = parser.parse().unwrap();
         println!("{}", parser.output);
         println!("{:?}", ast);

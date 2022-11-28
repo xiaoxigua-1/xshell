@@ -421,7 +421,6 @@ dependencies = [
  "x-parser",
  "x-protocol",
  "x-render",
- "x-repl",
  "x-util",
 ]
 
@@ -453,14 +452,6 @@ dependencies = [
 name = "x-render"
 version = "0.1.0"
 dependencies = [
- "x-protocol",
-]
-
-[[package]]
-name = "x-repl"
-version = "0.1.0"
-dependencies = [
- "x-parser",
  "x-protocol",
 ]
 

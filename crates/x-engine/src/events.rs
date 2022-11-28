@@ -1,10 +1,11 @@
 use x_input::Input;
-use x_parser::{parser, Parser};
 use x_protocol::crossterm::event::{read, Event};
 use x_protocol::crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use x_protocol::crossterm::Result;
 use x_protocol::state::ShellState;
 use x_render::Render;
+
+use crate::repl::repl;
 
 pub struct XShellEvent {
     state: ShellState,
@@ -23,10 +24,7 @@ impl XShellEvent {
         render.output_state(&self.state)?;
         while !self.state.is_exit {
             render.clear_line()?;
-            let output_str = match parser(&mut input) {
-                Ok(output) => output.string,
-                Err(e) => format!("{:?}", e),
-            };
+            let output_str = repl(&mut input);
             let cursor_index = {
                 let mut index = 0;
 
