@@ -1,35 +1,38 @@
 mod lexer;
 mod syntax;
 
-use std::{fmt::Display, iter::Peekable, ops::Range};
+use std::iter::Enumerate;
+use std::{iter::Peekable, ops::Range};
 
 pub use lexer::Lexer;
-use x_protocol::ShellErr;
 use x_protocol::ast::AST;
+use x_protocol::crossterm::style::Stylize;
 use x_protocol::shell_err::Result;
+use x_protocol::ShellErr;
 use x_protocol::{crossterm::style::StyledContent, Kwd, Token, Tokens};
 
 pub struct Parser<'a> {
-    lexer: Peekable<Lexer<'a>>,
-    pub output: String,
+    lexer: Peekable<Enumerate<Lexer<'a>>>,
+    pub output: Vec<StyledContent<String>>,
 }
 
 impl<'a> Parser<'a> {
     pub fn new(lexer: Lexer<'a>) -> Self {
         Parser {
-            lexer: lexer.peekable(),
-            output: String::new(),
+            lexer: lexer.enumerate().peekable(),
+            output: vec![],
         }
     }
 
     pub fn parse(&mut self) -> Result<Option<AST>> {
-        Ok(if let Some(token) = self.lexer.next() {
+        self.output.clear();
+        Ok(if let Some((_, token)) = self.lexer.next() {
             let token = token?;
-            self.output_str(&token.ty.default_highlighter());
+            self.output_str(token.ty.default_highlighter());
             Some(match &token.ty {
                 Tokens::Keyword(k) => self.builtin(&k)?,
                 _ => {
-                    if let Some(peek_token) = self.lexer.peek() {
+                    if let Some((_, peek_token)) = self.lexer.peek() {
                         if let Ok(peek_token) = peek_token {
                             if peek_token.ty.eq(&Tokens::Symbol('(')) {
                                 return Ok(Some(self.call_function(token)?));
@@ -51,8 +54,8 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn output_str<T: Display>(&mut self, s: T) {
-        self.output.push_str(&s.to_string());
+    fn output_str(&mut self, s: StyledContent<String>) {
+        self.output.push(s);
     }
 
     fn eat_token_eq<F, E, S>(
@@ -60,15 +63,15 @@ impl<'a> Parser<'a> {
         eq_func: F,
         err: E,
         custom_style: Option<S>,
-    ) -> Result<Token>
+    ) -> Result<(usize, Token)>
     where
         F: FnOnce(&Token) -> bool,
-        E: FnOnce(Range<usize>) -> ShellErr,
+        E: FnOnce(Range<usize>, usize) -> ShellErr,
         S: FnOnce(String) -> StyledContent<String>,
     {
         self.eat_whitespace()?;
         let token = self.lexer.next();
-        if let Some(token) = token {
+        if let Some((i, token)) = token {
             let token = token?;
             if eq_func(&token) {
                 let output = if let Some(highlighter) = custom_style {
@@ -77,30 +80,30 @@ impl<'a> Parser<'a> {
                     token.ty.default_highlighter()
                 };
                 self.output_str(output);
-                Ok(token)
+                Ok((i, token))
             } else {
-                Err(err(token.span))
+                Err(err(token.span, i))
             }
         } else {
             Err(ShellErr::EOF)
         }
     }
 
-    fn eat_token_eq_default<F>(&mut self, eq_func: F, err_message: &str) -> Result<Token>
+    fn eat_token_eq_default<F>(&mut self, eq_func: F, err_message: &str) -> Result<(usize, Token)>
     where
         F: FnOnce(&Token) -> bool,
     {
         self.eat_token_eq(
             eq_func,
-            |span| ShellErr::Syntax(span, err_message.into()),
+            |span, _| ShellErr::Syntax(span, err_message.into()),
             None::<Box<dyn FnOnce(String) -> StyledContent<String>>>,
         )
     }
 
-    fn eat_token_eq_custom_err<F, E>(&mut self, eq_func: F, err: E) -> Result<Token>
+    fn eat_token_eq_custom_err<F, E>(&mut self, eq_func: F, err: E) -> Result<(usize, Token)>
     where
         F: FnOnce(&Token) -> bool,
-        E: FnOnce(Range<usize>) -> ShellErr,
+        E: FnOnce(Range<usize>, usize) -> ShellErr,
     {
         self.eat_token_eq(
             eq_func,
@@ -114,25 +117,25 @@ impl<'a> Parser<'a> {
         eq_func: F,
         err_message: &str,
         custom_style: S,
-    ) -> Result<Token>
+    ) -> Result<(usize, Token)>
     where
         F: FnOnce(&Token) -> bool,
         S: FnOnce(String) -> StyledContent<String>,
     {
         self.eat_token_eq(
             eq_func,
-            |span| ShellErr::Syntax(span, err_message.into()),
+            |span, _| ShellErr::Syntax(span, err_message.into()),
             Some(custom_style),
         )
     }
 
     fn eat_whitespace(&mut self) -> Result<()> {
         loop {
-            if let Some(t) = self.lexer.peek() {
+            if let Some((_, t)) = self.lexer.peek() {
                 match t {
                     Ok(t) => match t.ty {
                         Tokens::Space(c) => {
-                            self.output.push(c);
+                            self.output.push(c.to_string().stylize());
                             self.lexer.next()
                         }
                         _ => break Ok(()),
@@ -142,6 +145,19 @@ impl<'a> Parser<'a> {
             } else {
                 break Ok(());
             };
+        }
+    }
+
+    pub fn eat_remaining_tokens(&mut self) -> Result<Vec<StyledContent<String>>> {
+        let mut tokens: Vec<StyledContent<String>> = vec![];
+
+        loop {
+            if let Some((_, token)) = self.lexer.next() {
+                let token = token?;
+                tokens.push(token.ty.default_highlighter());
+            } else {
+                break Ok(tokens);
+            }
         }
     }
 }
@@ -178,7 +194,15 @@ mod parser_test {
         let lexer = Lexer::new(s.chars());
         let mut parser = Parser::new(lexer);
         let ast = parser.parse().unwrap();
-        println!("{}", parser.output);
+        println!(
+            "{}",
+            parser
+                .output
+                .iter()
+                .map(|s| { s.to_string() })
+                .collect::<Vec<String>>()
+                .join("")
+        );
         println!("{:?}", ast);
     }
 }

@@ -1,6 +1,6 @@
 use std::{fmt::Display, ops::Range};
 
-use crossterm::style::{ContentStyle, StyledContent, Stylize};
+use crossterm::style::{StyledContent, Stylize};
 
 macro_rules! Gen {
     ($name: ident, $($kwd: ident => $str: expr),*) => {
@@ -96,11 +96,12 @@ impl Display for Tokens {
 }
 
 impl Tokens {
-    pub fn default_highlighter(&self) -> String {
+    pub fn default_highlighter(&self) -> StyledContent<String> {
         use Tokens::*;
 
         match self {
-            Ident(s) | Int(s) | Str(s) => s.clone().dark_blue(),
+            Ident(s) | Int(s) => s.clone().dark_blue(),
+            Str(s) => s.clone().dark_green(),
             Keyword(k) => k.to_string().dark_green(),
             Space(c) => c.to_string().reset(),
             Symbol(c) => c.to_string().with(crossterm::style::Color::Rgb {
@@ -111,13 +112,12 @@ impl Tokens {
             Arg(s) => s.clone().yellow(),
             _ => self.to_string().reset(),
         }
-        .to_string()
     }
 
-    pub fn highlighter<F>(&self, highlighter: F) -> String
+    pub fn highlighter<F>(&self, highlighter: F) -> StyledContent<String>
     where
         F: FnOnce(String) -> StyledContent<String>,
     {
-        highlighter(self.to_string()).to_string()
+        highlighter(self.to_string())
     }
 }

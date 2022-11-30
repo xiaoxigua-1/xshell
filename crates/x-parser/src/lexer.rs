@@ -42,14 +42,16 @@ impl<'a> Lexer<'a> {
     pub fn next_token(&mut self) -> Result<Token> {
         Ok(if let Some((i, c)) = self.input_stream.next() {
             match c {
-                '\n' => Token::new(Tokens::NewLine, i..i),
-                c if c.is_whitespace() => Token::new(Tokens::Space(c), i..i),
+                '\n' => Token::new(Tokens::NewLine, i..i + 1),
+                c if c.is_whitespace() => Token::new(Tokens::Space(c), i..i + 1),
                 '"' | '\'' => self.str_lex((i, c), c == '"')?,
                 '|' => self.or(i),
                 '&' => self.and(i),
                 // path
                 '.' | '/' | '~' => self.path((i, c))?,
-                c if c.is_ascii_punctuation() && c != '_' => Token::new(Tokens::Symbol(c), i..i),
+                c if c.is_ascii_punctuation() && c != '_' => {
+                    Token::new(Tokens::Symbol(c), i..i + 1)
+                }
                 '0'..='9' => self.int_lex((i, c))?,
                 _ => self.ident_lex((i, c))?,
             }
@@ -61,9 +63,9 @@ impl<'a> Lexer<'a> {
 
     fn or(&mut self, start: usize) -> Token {
         if let Some((end, _)) = self.input_stream.next_if(|(_, c)| c.eq(&'|')) {
-            Token::new(Tokens::PipeLine, start..end)
+            Token::new(Tokens::PipeLine, start..end + 1)
         } else {
-            Token::new(Tokens::Or, start..start)
+            Token::new(Tokens::Or, start..start + 1)
         }
     }
 
@@ -71,7 +73,7 @@ impl<'a> Lexer<'a> {
         if let Some((end, _)) = self.input_stream.next_if(|(_, c)| c.eq(&'&')) {
             Token::new(Tokens::And, start..end)
         } else {
-            Token::new(Tokens::Background, start..start)
+            Token::new(Tokens::Background, start..start + 1)
         }
     }
 
@@ -102,7 +104,7 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        Ok(Token::new(Tokens::Path(path), start..end))
+        Ok(Token::new(Tokens::Path(path), start..end + 1))
     }
 
     fn escape_char(&mut self) -> Result<char> {
@@ -126,13 +128,10 @@ impl<'a> Lexer<'a> {
             if let Some((i, c)) = self.input_stream.next() {
                 s.push(c);
                 if (double && c == '"') || (!double && c == '\'') {
-                    break Ok(Token::new(Tokens::Str(s), start..i));
+                    break Ok(Token::new(Tokens::Str(s), start..i + 1));
                 }
             } else {
-                break Err(x_protocol::ShellErr::Unterminated(
-                    start..start,
-                    "Unterminated string".into(),
-                ));
+                break Err(x_protocol::ShellErr::UnterminatedStr(start..start + 1));
             }
         }
     }
@@ -155,10 +154,7 @@ impl<'a> Lexer<'a> {
             self.decimal_lex(i, &mut int_s)?
         }
 
-        Ok(Token::new(
-            Tokens::Int(int_s.clone()),
-            i..(i + int_s.len() - 1),
-        ))
+        Ok(Token::new(Tokens::Int(int_s.clone()), i..i + int_s.len()))
     }
 
     fn decimal_lex(&mut self, start: usize, s: &mut String) -> Result<()> {
@@ -174,7 +170,7 @@ impl<'a> Lexer<'a> {
                         let end = self.eat(start.clone(), |c| {
                             !c.is_whitespace() && !c.is_ascii_punctuation()
                         });
-                        break Err(ShellErr::Syntax(start..end, "".into()));
+                        break Err(ShellErr::Syntax(start..end + 1, "".into()));
                     }
                 }
             } else {
@@ -198,7 +194,7 @@ impl<'a> Lexer<'a> {
                         let end = self.eat(start.clone(), |c| {
                             !c.is_whitespace() && !c.is_ascii_punctuation()
                         });
-                        break Err(ShellErr::Syntax(start..end, "".into()));
+                        break Err(ShellErr::Syntax(start..end + 1, "".into()));
                     }
                 }
             } else {
@@ -222,7 +218,7 @@ impl<'a> Lexer<'a> {
                         let end = self.eat(start.clone(), |c| {
                             !c.is_whitespace() && !c.is_ascii_punctuation()
                         });
-                        break Err(ShellErr::Syntax(start..end, "".into()));
+                        break Err(ShellErr::Syntax(start..end + 1, "".into()));
                     }
                 }
             } else {
@@ -240,10 +236,10 @@ impl<'a> Lexer<'a> {
                     let (_, c) = self.input_stream.next().unwrap();
                     s.push(c);
                 } else {
-                    break Ok(Token::new(token_type(s), start..(i - 1)));
+                    break Ok(Token::new(token_type(s), start..*i));
                 }
             } else {
-                break Ok(Token::new(token_type(s), start..(self.end.end - 1)));
+                break Ok(Token::new(token_type(s), start..self.end.end));
             }
         }
     }

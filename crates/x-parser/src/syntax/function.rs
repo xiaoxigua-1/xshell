@@ -8,7 +8,7 @@ use x_protocol::{Token, Tokens};
 
 impl<'a> Parser<'a> {
     pub fn function_syntax(&mut self) -> Result<AST> {
-        let name = self.eat_token_eq_default(
+        let (_, name) = self.eat_token_eq_default(
             |token| {
                 if let Tokens::Ident(_) = token.ty {
                     true
@@ -30,7 +30,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parameters(&mut self) -> Result<Parameters> {
-        let left = self.eat_token_eq_default(
+        let (left_i, left) = self.eat_token_eq_default(
             |token| {
                 if let Tokens::Symbol(symbol) = &token.ty {
                     symbol.eq(&'(')
@@ -42,16 +42,17 @@ impl<'a> Parser<'a> {
         )?;
         let mut variables: Vec<Token> = vec![];
         let right = loop {
-            if let Some(right) = self.lexer.peek() {
+            if let Some((_, right)) = self.lexer.peek() {
                 if let Ok(right) = right {
                     if let Tokens::Symbol(')') = right.ty {
-                        let right = self.lexer.next().unwrap()?;
-                        self.output_str(&right.ty.default_highlighter());
+                        let (_, right) = self.lexer.next().unwrap();
+                        let right = right?;
+                        self.output_str(right.ty.default_highlighter());
                         break right;
                     }
                 }
             }
-            let variable = self.eat_token_eq(
+            let (_, variable) = self.eat_token_eq(
                 |token| {
                     if let Tokens::Ident(_) = &token.ty {
                         true
@@ -59,9 +60,10 @@ impl<'a> Parser<'a> {
                         false
                     }
                 },
-                |_| {
+                |_, i| {
                     x_protocol::ShellErr::Unterminated(
                         left.span.clone(),
+                        left_i,
                         "Missing right parentheses brackets.".into(),
                     )
                 },

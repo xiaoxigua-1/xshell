@@ -1,5 +1,5 @@
 mod events;
-mod repl;
 mod execute;
+mod repl;
 
 pub use events::XShellEvent;
