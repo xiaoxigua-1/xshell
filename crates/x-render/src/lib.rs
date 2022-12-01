@@ -5,29 +5,14 @@ use x_protocol::crossterm::execute;
 use x_protocol::crossterm::style::{Print, Stylize};
 use x_protocol::crossterm::terminal::{Clear, ClearType};
 use x_protocol::crossterm::Result;
-use x_protocol::{InputState, ShellState};
+use x_protocol::ShellState;
 
 pub struct Render {
     stdout: Stdout,
 }
 
 impl Render {
-    pub fn render(
-        &mut self,
-        state: &InputState,
-        input: String,
-        cursor: usize,
-        shell_state: &ShellState,
-    ) -> Result<()> {
-        self.user_input(input, cursor)?;
-        match state {
-            InputState::NewLine | InputState::Execute => self.new_line(shell_state)?,
-            _ => {}
-        }
-        Ok(())
-    }
-
-    fn new_line(&mut self, shell_state: &ShellState) -> Result<()> {
+    pub fn new_line(&mut self, shell_state: &ShellState) -> Result<()> {
         execute!(&self.stdout, Print("\n"), MoveToColumn(0))?;
         self.output_state(shell_state)
     }
@@ -40,7 +25,7 @@ impl Render {
         )
     }
 
-    fn user_input<T: Display>(&self, input: T, cursor: usize) -> Result<()> {
+    pub fn render<T: Display>(&self, input: T, cursor: usize) -> Result<()> {
         execute!(&self.stdout, Print(input), MoveLeft(cursor as u16))
     }
 

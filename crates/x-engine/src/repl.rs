@@ -2,21 +2,25 @@ use x_input::Input;
 use x_parser::{Lexer, Parser};
 use x_protocol::{
     crossterm::style::{StyledContent, Stylize},
-    ShellErr,
+    crossterm::Result,
+    ShellErr, ShellState,
 };
+use x_render::Render;
 
-pub fn repl(input: &mut Input) -> String {
+pub fn repl(render: &mut Render, input: &mut Input, shell_state: &ShellState) -> Result<()> {
+    use x_protocol::InputState::*;
     let raw_input = input.user_input.clone();
     let lexer = Lexer::new(raw_input.chars());
     let mut parser = Parser::new(lexer);
     let mut output: Vec<StyledContent<String>> = vec![];
 
-    loop {
+
+    let is_error = loop {
         match parser.parse() {
             Ok(token) => {
                 if let Some(token) = token {
                 } else {
-                    break;
+                    break false;
                 }
 
                 output.append(&mut parser.output.clone());
@@ -24,22 +28,52 @@ pub fn repl(input: &mut Input) -> String {
             Err(e) => {
                 output.append(&mut parser.output.clone());
                 let Some(out) = error_header(e.clone(), &raw_input, &mut output, &mut parser) else {
-                    break;
+                    break true;
                 };
                 output.push(out);
-                output.push(format!("{:?}", e).stylize())
+                output.push(format!("{:?}", e).stylize());
+                break true;
             }
         }
-    }
-
-    format!(
+    };
+    let output_str = format!(
         "{} ",
         output
             .iter()
             .map(|s| { s.to_string() })
             .collect::<Vec<_>>()
             .join("")
-    )
+    );
+    let cursor_index = {
+        let mut index = 0;
+
+        input.user_input[input.cursor..input.user_input.len()]
+            .chars()
+            .for_each(|c| {
+                index += if c.is_ascii() { 1 } else { 2 };
+            });
+        index + 1
+    };
+
+    render.clear_line()?;
+    render.render(output_str, cursor_index)?;
+    match input.state {
+        Execute => {
+            render.new_line(shell_state)?;
+            if is_error {
+                input.state = NONE;
+                repl(render, input, shell_state)?;
+            } else {
+                input.clear();
+            }
+        },
+        NewLine => {
+            input.clear();
+            render.new_line(shell_state)?;
+        }
+        _ => {}
+    }
+    Ok(())
 }
 
 fn error_header(

@@ -23,19 +23,7 @@ impl XShellEvent {
         enable_raw_mode()?;
         render.output_state(&self.state)?;
         while !self.state.is_exit {
-            let output_str = repl(&mut input);
-            let cursor_index = {
-                let mut index = 0;
-
-                input.user_input[input.cursor..input.user_input.len()]
-                    .chars()
-                    .for_each(|c| {
-                        index += if c.is_ascii() { 1 } else { 2 };
-                    });
-                index + 1
-            };
-            render.clear_line()?;
-            render.render(&input.state, output_str, cursor_index, &self.state)?;
+            repl(&mut render, &mut input, &self.state)?;
 
             match read()? {
                 Event::Key(key) => input.input(&key, &mut self.state),
