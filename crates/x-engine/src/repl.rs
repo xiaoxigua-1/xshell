@@ -23,10 +23,11 @@ pub fn repl(input: &mut Input) -> String {
             }
             Err(e) => {
                 output.append(&mut parser.output.clone());
-                let Some(out) = error_header(e, &raw_input, &mut output, &mut parser) else {
+                let Some(out) = error_header(e.clone(), &raw_input, &mut output, &mut parser) else {
                     break;
                 };
                 output.push(out);
+                output.push(format!("{:?}", e).stylize())
             }
         }
     }

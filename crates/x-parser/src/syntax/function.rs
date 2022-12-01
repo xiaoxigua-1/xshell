@@ -23,12 +23,6 @@ impl<'a> Parser<'a> {
         Ok(AST::Function { name, parameters })
     }
 
-    pub fn call_function(&mut self, name: Token) -> Result<AST> {
-        self.eat_token_eq_default(|token| token.ty.eq(&Tokens::Symbol('(')), "")?;
-        todo!("parse args");
-        Ok(AST::Call { name })
-    }
-
     fn parameters(&mut self) -> Result<Parameters> {
         let (left_i, left) = self.eat_token_eq_default(
             |token| {
@@ -42,34 +36,43 @@ impl<'a> Parser<'a> {
         )?;
         let mut variables: Vec<Token> = vec![];
         let right = loop {
-            if let Some((_, right)) = self.lexer.peek() {
-                if let Ok(right) = right {
-                    if let Tokens::Symbol(')') = right.ty {
-                        let (_, right) = self.lexer.next().unwrap();
-                        let right = right?;
-                        self.output_str(right.ty.default_highlighter());
-                        break right;
-                    }
-                }
+            self.eat_whitespace()?;
+            if let Some((_, right)) = self.lexer.next_if(|(_, token)| {
+                let Ok(token) = token else {
+                    return false;
+                };
+                token.ty.eq(&Tokens::Symbol(')'))
+            }) {
+                let right = right?;
+                self.output_str(right.ty.default_highlighter());
+                break right;
             }
-            let (_, variable) = self.eat_token_eq(
-                |token| {
-                    if let Tokens::Ident(_) = &token.ty {
-                        true
-                    } else {
-                        false
-                    }
-                },
-                |_, i| {
-                    x_protocol::ShellErr::Unterminated(
+            let Some((_, token)) = self.lexer.next() else {
+                return Err(x_protocol::ShellErr::Unterminated(
                         left.span.clone(),
                         left_i,
-                        "Missing right parentheses brackets.".into(),
-                    )
+                        "Missing right parentheses brackets.".into()
+                ));
+            };
+
+            let token = token?;
+            match token.ty {
+                Tokens::Ident(_) => {
+                    self.output_str(token.ty.default_highlighter());
+                    variables.push(token)
                 },
-                Some(|s: String| s.blue()),
-            )?;
-            variables.push(variable);
+                Tokens::EOF => {
+                    return Err(x_protocol::ShellErr::Unterminated(
+                        left.span.clone(),
+                        left_i,
+                        "Missing right parentheses brackets.".into()
+                    ));
+                }
+                _ => {
+                    self.output_str(token.ty.default_highlighter());
+                    return Err(x_protocol::ShellErr::Syntax(token.span, format!("{:?}", token.ty)))
+                } 
+            }
         };
 
         debug!(

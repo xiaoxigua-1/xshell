@@ -31,17 +31,7 @@ impl<'a> Parser<'a> {
             self.output_str(token.ty.default_highlighter());
             Some(match &token.ty {
                 Tokens::Keyword(k) => self.builtin(&k)?,
-                _ => {
-                    if let Some((_, peek_token)) = self.lexer.peek() {
-                        if let Ok(peek_token) = peek_token {
-                            if peek_token.ty.eq(&Tokens::Symbol('(')) {
-                                return Ok(Some(self.call_function(token)?));
-                            }
-                        }
-                    }
-
-                    self.command(token)?
-                }
+                _ => self.command(token)? 
             })
         } else {
             None
