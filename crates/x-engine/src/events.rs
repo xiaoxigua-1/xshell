@@ -23,7 +23,6 @@ impl XShellEvent {
         enable_raw_mode()?;
         render.output_state(&self.state)?;
         while !self.state.is_exit {
-            render.clear_line()?;
             let output_str = repl(&mut input);
             let cursor_index = {
                 let mut index = 0;
@@ -35,6 +34,7 @@ impl XShellEvent {
                     });
                 index + 1
             };
+            render.clear_line()?;
             render.render(&input.state, output_str, cursor_index, &self.state)?;
 
             match read()? {
