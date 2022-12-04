@@ -31,7 +31,8 @@ impl<'a> Parser<'a> {
             self.output_str(token.ty.default_highlighter());
             Some(match &token.ty {
                 Tokens::Keyword(k) => self.builtin(&k)?,
-                _ => self.command(token)? 
+                Tokens::EOF => return Ok(None),
+                _ => self.command(token)?,
             })
         } else {
             None
@@ -138,16 +139,12 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn eat_remaining_tokens(&mut self) -> Result<Vec<StyledContent<String>>> {
-        let mut tokens: Vec<StyledContent<String>> = vec![];
-
-        loop {
-            if let Some((_, token)) = self.lexer.next() {
-                let token = token?;
-                tokens.push(token.ty.default_highlighter());
-            } else {
-                break Ok(tokens);
-            }
+    pub fn eat_remaining_token(&mut self) -> Result<StyledContent<String>> {
+        if let Some((_, token)) = self.lexer.next() {
+            let token = token?;
+            Ok(token.ty.default_highlighter())
+        } else {
+            Err(ShellErr::EOF)
         }
     }
 }

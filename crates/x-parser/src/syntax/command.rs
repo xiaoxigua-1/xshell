@@ -1,6 +1,6 @@
 use x_protocol::ast::AST;
-use x_protocol::{Result, Token};
 use x_protocol::Tokens;
+use x_protocol::{Result, Token};
 
 use crate::Parser;
 
@@ -13,7 +13,9 @@ impl Parser<'_> {
                 let Ok(token) = token else {
                     return false;
                 };
-                token.ty.eq(&Tokens::Symbol(';')) || token.ty.eq(&Tokens::NewLine) || token.ty.eq(&Tokens::EOF)
+                token.ty.eq(&Tokens::Symbol(';'))
+                    || token.ty.eq(&Tokens::NewLine)
+                    || token.ty.eq(&Tokens::EOF)
             }) {
                 self.output_str(semicolon?.ty.default_highlighter());
                 break;

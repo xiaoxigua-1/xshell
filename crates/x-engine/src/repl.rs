@@ -14,11 +14,11 @@ pub fn repl(render: &mut Render, input: &mut Input, shell_state: &ShellState) ->
     let mut parser = Parser::new(lexer);
     let mut output: Vec<StyledContent<String>> = vec![];
 
-
     let is_error = loop {
         match parser.parse() {
-            Ok(token) => {
-                if let Some(token) = token {
+            Ok(ast) => {
+                if let Some(ast) = ast {
+                    
                 } else {
                     break false;
                 }
@@ -27,11 +27,8 @@ pub fn repl(render: &mut Render, input: &mut Input, shell_state: &ShellState) ->
             }
             Err(e) => {
                 output.append(&mut parser.output.clone());
-                let Some(out) = error_header(e.clone(), &raw_input, &mut output, &mut parser) else {
-                    break true;
-                };
-                output.push(out);
                 output.push(format!("{:?}", e).stylize());
+                error_header(e.clone(), &raw_input, &mut output, &mut parser);
                 break true;
             }
         }
@@ -66,7 +63,7 @@ pub fn repl(render: &mut Render, input: &mut Input, shell_state: &ShellState) ->
             } else {
                 input.clear();
             }
-        },
+        }
         NewLine => {
             input.clear();
             render.new_line(shell_state)?;
@@ -81,10 +78,25 @@ fn error_header(
     raw_input: &String,
     output: &mut Vec<StyledContent<String>>,
     parser: &mut Parser,
-) -> Option<StyledContent<String>> {
+) {
     match e {
-        x_protocol::ShellErr::Syntax(range, _) => Some(raw_input[range].to_string().red()),
-        x_protocol::ShellErr::UnterminatedStr(range) => Some(
+        x_protocol::ShellErr::Syntax(range, _) => {
+            output.push(raw_input[range].to_string().red());
+            
+            loop {
+                match parser.eat_remaining_token() {
+                    Ok(t) => output.push(t),
+                    Err(e) => {
+                        if let ShellErr::EOF = e {
+                            break;
+                        } else {
+                            error_header(e, raw_input, output, parser)
+                        }
+                    }
+                }
+            }
+        },
+        x_protocol::ShellErr::UnterminatedStr(range) => output.push(
             format!(
                 "{}{}",
                 raw_input[range.clone()].red(),
@@ -92,13 +104,7 @@ fn error_header(
             )
             .stylize(),
         ),
-        x_protocol::ShellErr::Unterminated(_, i, _) => {
-            output[i] = output[i].clone().red();
-            if let Err(e) = parser.eat_remaining_tokens() {
-                error_header(e, raw_input, output, parser);
-            }
-            None
-        }
-        x_protocol::ShellErr::EOF => None,
+        x_protocol::ShellErr::Unterminated(_, i, _) => output[i] = output[i].clone().red(),
+        x_protocol::ShellErr::EOF => {}
     }
 }

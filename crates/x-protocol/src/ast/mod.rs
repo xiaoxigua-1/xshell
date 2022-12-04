@@ -20,5 +20,5 @@ pub enum Expression {
     Ident(Token),
     Str(Token),
     Int(Token),
-    Path(Token)
+    Path(Token),
 }

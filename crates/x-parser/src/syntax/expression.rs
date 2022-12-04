@@ -17,10 +17,24 @@ impl Parser<'_> {
             Int(_) => Expression::Int(token),
             Path(_) => Expression::Path(token),
             Symbol(c) if c.eq(&'$') => {
-                let (_, name) = self.eat_token_eq_default(|token| { if let Tokens::Ident(_) = token.ty { true } else { false } }, "Variable name error")?;
+                let (_, name) = self.eat_token_eq_default(
+                    |token| {
+                        if let Tokens::Ident(_) = token.ty {
+                            true
+                        } else {
+                            false
+                        }
+                    },
+                    "Variable name error",
+                )?;
                 Expression::Variable(name)
             }
-            _ => return Err(x_protocol::ShellErr::Syntax(token.span, "Not a expression".into()))
+            _ => {
+                return Err(x_protocol::ShellErr::Syntax(
+                    token.span,
+                    "Not a expression".into(),
+                ))
+            }
         })
     }
 }

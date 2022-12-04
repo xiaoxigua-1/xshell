@@ -60,18 +60,21 @@ impl<'a> Parser<'a> {
                 Tokens::Ident(_) => {
                     self.output_str(token.ty.default_highlighter());
                     variables.push(token)
-                },
+                }
                 Tokens::EOF => {
                     return Err(x_protocol::ShellErr::Unterminated(
                         left.span.clone(),
                         left_i,
-                        "Missing right parentheses brackets.".into()
+                        "Missing right parentheses brackets.".into(),
                     ));
                 }
                 _ => {
                     self.output_str(token.ty.default_highlighter());
-                    return Err(x_protocol::ShellErr::Syntax(token.span, "This is not ident.".into()))
-                } 
+                    return Err(x_protocol::ShellErr::Syntax(
+                        token.span,
+                        "This is not ident.".into(),
+                    ));
+                }
             }
         };
 

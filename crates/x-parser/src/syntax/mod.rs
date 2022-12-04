@@ -1,6 +1,6 @@
 mod command;
-mod function;
 mod expression;
+mod function;
 
 pub use command::*;
 pub use expression::*;
