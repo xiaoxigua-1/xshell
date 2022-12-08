@@ -54,7 +54,7 @@ pub enum Tokens {
 
 Gen!(
     Kwd,
-    Function => "function"
+    Function => "def"
 );
 
 #[derive(Debug, Clone)]
@@ -81,7 +81,7 @@ impl Display for Tokens {
             f,
             "{}",
             match self {
-                Ident(s) | Int(s) | Str(s) | Arg(s) => s.to_string(),
+                Path(s) | Ident(s) | Int(s) | Str(s) | Arg(s) => s.to_string(),
                 Keyword(k) => k.to_string(),
                 Space(c) | Symbol(c) => c.to_string(),
                 Background => "&".into(),
@@ -89,6 +89,7 @@ impl Display for Tokens {
                 Or => "|".into(),
                 PipeLine => "||".into(),
                 NewLine => "\n".into(),
+
                 _ => "".into(),
             }
         )
@@ -102,7 +103,7 @@ impl Tokens {
         match self {
             Ident(s) | Int(s) => s.clone().dark_blue(),
             Str(s) => s.clone().dark_green(),
-            Keyword(k) => k.to_string().dark_green(),
+            Keyword(k) => k.to_string().dark_green().bold(),
             Space(c) => c.to_string().reset(),
             Symbol(c) => c.to_string().with(crossterm::style::Color::Rgb {
                 r: 242,

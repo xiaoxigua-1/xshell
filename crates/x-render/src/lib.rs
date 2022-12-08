@@ -47,6 +47,15 @@ impl Render {
             SavePosition
         )
     }
+
+    pub fn debug<T: Display>(&self, s: T) -> Result<()> {
+        execute!(
+            &self.stdout,
+            Print('\n'),
+            MoveToColumn(0), 
+            Print(s),
+        )
+    }
 }
 
 impl Default for Render {

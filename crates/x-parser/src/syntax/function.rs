@@ -69,7 +69,6 @@ impl<'a> Parser<'a> {
                     ));
                 }
                 _ => {
-                    self.output_str(token.ty.default_highlighter());
                     return Err(x_protocol::ShellErr::Syntax(
                         token.span,
                         "This is not ident.".into(),

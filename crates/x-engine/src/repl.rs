@@ -3,9 +3,11 @@ use x_parser::{Lexer, Parser};
 use x_protocol::{
     crossterm::style::{StyledContent, Stylize},
     crossterm::Result,
-    ShellErr, ShellState,
+    ShellErr, ShellState, ast::AST,
 };
 use x_render::Render;
+
+use crate::execute;
 
 pub fn repl(render: &mut Render, input: &mut Input, shell_state: &ShellState) -> Result<()> {
     use x_protocol::InputState::*;
@@ -13,12 +15,13 @@ pub fn repl(render: &mut Render, input: &mut Input, shell_state: &ShellState) ->
     let lexer = Lexer::new(raw_input.chars());
     let mut parser = Parser::new(lexer);
     let mut output: Vec<StyledContent<String>> = vec![];
+    let mut asts: Vec<AST> = vec![];
 
     let is_error = loop {
         match parser.parse() {
             Ok(ast) => {
                 if let Some(ast) = ast {
-                    
+                    asts.push(ast);                    
                 } else {
                     break false;
                 }
@@ -56,6 +59,7 @@ pub fn repl(render: &mut Render, input: &mut Input, shell_state: &ShellState) ->
     render.render(output_str, cursor_index)?;
     match input.state {
         Execute => {
+            render.debug(format!("{:?}", asts))?;
             render.new_line(shell_state)?;
             if is_error {
                 input.state = NONE;

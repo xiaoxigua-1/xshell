@@ -92,7 +92,7 @@ impl<'a> Lexer<'a> {
                     && !c.eq(&'?')
                     && !c.eq(&'*')
             }) {
-                end += if c.eq(&'\\') {
+                end = if c.eq(&'\\') {
                     path.push(self.escape_char()?);
                     i + 1
                 } else {
