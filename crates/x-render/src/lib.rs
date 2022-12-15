@@ -49,12 +49,7 @@ impl Render {
     }
 
     pub fn debug<T: Display>(&self, s: T) -> Result<()> {
-        execute!(
-            &self.stdout,
-            Print('\n'),
-            MoveToColumn(0), 
-            Print(s),
-        )
+        execute!(&self.stdout, Print('\n'), MoveToColumn(0), Print(s),)
     }
 }
 

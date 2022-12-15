@@ -1,13 +1,12 @@
 use x_input::Input;
 use x_parser::{Lexer, Parser};
 use x_protocol::{
+    ast::AST,
     crossterm::style::{StyledContent, Stylize},
     crossterm::Result,
-    ShellErr, ShellState, ast::AST,
+    ShellErr, ShellState,
 };
 use x_render::Render;
-
-use crate::execute;
 
 pub fn repl(render: &mut Render, input: &mut Input, shell_state: &ShellState) -> Result<()> {
     use x_protocol::InputState::*;
@@ -21,15 +20,15 @@ pub fn repl(render: &mut Render, input: &mut Input, shell_state: &ShellState) ->
         match parser.parse() {
             Ok(ast) => {
                 if let Some(ast) = ast {
-                    asts.push(ast);                    
+                    asts.push(ast);
                 } else {
                     break false;
                 }
 
-                output.append(&mut parser.output.clone());
+                output = parser.output.clone();
             }
             Err(e) => {
-                output.append(&mut parser.output.clone());
+                output = parser.output.clone();
                 output.push(format!("{:?}", e).stylize());
                 error_header(e.clone(), &raw_input, &mut output, &mut parser);
                 break true;
@@ -86,7 +85,7 @@ fn error_header(
     match e {
         x_protocol::ShellErr::Syntax(range, _) => {
             output.push(raw_input[range].to_string().red());
-            
+
             loop {
                 match parser.eat_remaining_token() {
                     Ok(t) => output.push(t),
@@ -99,7 +98,7 @@ fn error_header(
                     }
                 }
             }
-        },
+        }
         x_protocol::ShellErr::UnterminatedStr(range) => output.push(
             format!(
                 "{}{}",

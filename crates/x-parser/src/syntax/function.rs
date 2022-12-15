@@ -1,5 +1,4 @@
-use x_protocol::ast::{Parameters, AST};
-use x_protocol::crossterm::style::Stylize;
+use x_protocol::ast::{Block, Parameters, AST};
 use x_protocol::Result;
 use x_util::debug;
 
@@ -20,19 +19,25 @@ impl<'a> Parser<'a> {
         )?;
         debug!("Parse function name `{}`", name.ty.to_string());
         let parameters = self.parameters()?;
-        Ok(AST::Function { name, parameters })
+        let block = self.pase_block()?;
+
+        Ok(AST::Function {
+            name,
+            parameters,
+            block,
+        })
     }
 
     fn parameters(&mut self) -> Result<Parameters> {
         let (left_i, left) = self.eat_token_eq_default(
             |token| {
                 if let Tokens::Symbol(symbol) = &token.ty {
-                    symbol.eq(&'(')
+                    symbol.eq(&'[')
                 } else {
                     false
                 }
             },
-            "Missing left parentheses",
+            "Missing left square bracket.",
         )?;
         let mut variables: Vec<Token> = vec![];
         let right = loop {
@@ -41,7 +46,7 @@ impl<'a> Parser<'a> {
                 let Ok(token) = token else {
                     return false;
                 };
-                token.ty.eq(&Tokens::Symbol(')'))
+                token.ty.eq(&Tokens::Symbol(']'))
             }) {
                 let right = right?;
                 self.output_str(right.ty.default_highlighter());
@@ -51,7 +56,7 @@ impl<'a> Parser<'a> {
                 return Err(x_protocol::ShellErr::Unterminated(
                         left.span.clone(),
                         left_i,
-                        "Missing right parentheses brackets.".into()
+                        "Missing right square brackets.".into()
                 ));
             };
 
@@ -65,7 +70,7 @@ impl<'a> Parser<'a> {
                     return Err(x_protocol::ShellErr::Unterminated(
                         left.span.clone(),
                         left_i,
-                        "Missing right parentheses brackets.".into(),
+                        "Missing right square brackets.".into(),
                     ));
                 }
                 _ => {

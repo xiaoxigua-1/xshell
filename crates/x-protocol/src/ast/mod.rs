@@ -2,15 +2,31 @@ use crate::Token;
 
 #[derive(Debug, Clone)]
 pub enum AST {
-    Function { name: Token, parameters: Parameters },
-    Command { name: Token, args: Vec<Expression> },
-    Call { name: Token },
+    Function {
+        name: Token,
+        parameters: Parameters,
+        block: Block,
+    },
+    Command {
+        name: Token,
+        args: Vec<Expression>,
+    },
+    Call {
+        name: Token,
+    },
 }
 
 #[derive(Debug, Clone)]
 pub struct Parameters {
     pub left: Token,
     pub variables: Vec<Token>,
+    pub right: Token,
+}
+
+#[derive(Debug, Clone)]
+pub struct Block {
+    pub left: Token,
+    pub stmts: Vec<AST>,
     pub right: Token,
 }
 
