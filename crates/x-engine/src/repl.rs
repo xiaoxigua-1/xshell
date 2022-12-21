@@ -29,7 +29,7 @@ pub fn repl(render: &mut Render, input: &mut Input, shell_state: &ShellState) ->
             }
             Err(e) => {
                 output = parser.output.clone();
-                output.push(format!("{:?}", e).stylize());
+                render.debug(format!("{:?}", e))?;
                 error_header(e.clone(), &raw_input, &mut output, &mut parser);
                 break true;
             }
@@ -65,6 +65,7 @@ pub fn repl(render: &mut Render, input: &mut Input, shell_state: &ShellState) ->
                 repl(render, input, shell_state)?;
             } else {
                 input.clear();
+                // check ast and run ast
             }
         }
         NewLine => {

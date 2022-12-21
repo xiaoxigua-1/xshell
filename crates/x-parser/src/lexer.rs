@@ -194,7 +194,7 @@ impl<'a> Lexer<'a> {
                         let end = self.eat(start.clone(), |c| {
                             !c.is_whitespace() && !c.is_ascii_punctuation()
                         });
-                        break Err(ShellErr::Syntax(start..end + 1, "".into()));
+                        break Err(ShellErr::Syntax(start..end, "".into()));
                     }
                 }
             } else {
@@ -218,7 +218,7 @@ impl<'a> Lexer<'a> {
                         let end = self.eat(start.clone(), |c| {
                             !c.is_whitespace() && !c.is_ascii_punctuation()
                         });
-                        break Err(ShellErr::Syntax(start..end + 1, "".into()));
+                        break Err(ShellErr::Syntax(start..end, "".into()));
                     }
                 }
             } else {
@@ -259,7 +259,7 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        end + 1
+        end
     }
 }
 
