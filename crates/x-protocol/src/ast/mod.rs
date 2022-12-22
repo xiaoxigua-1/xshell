@@ -37,4 +37,5 @@ pub enum Expression {
     Str(Token),
     Int(Token),
     Path(Token),
+    Symbol(Token),
 }

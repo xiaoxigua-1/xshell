@@ -29,6 +29,7 @@ impl Parser<'_> {
                 )?;
                 Expression::Variable(name)
             }
+            Symbol(_) => Expression::Symbol(token),
             _ => {
                 return Err(x_protocol::ShellErr::Syntax(
                     token.span,
