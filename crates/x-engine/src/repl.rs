@@ -31,7 +31,7 @@ pub fn repl(render: &mut Render, input: &mut Input, shell_state: &ShellState) ->
             }
             Err(e) => {
                 output = parser.output.clone();
-                render.debug(format!("{:?}", e))?;
+                output.push(format!("{:?}", e).stylize());
                 error_header(e.clone(), &raw_input, &mut output, &mut parser);
                 break true;
             }

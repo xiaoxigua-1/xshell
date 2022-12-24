@@ -28,11 +28,15 @@ impl<'a> Parser<'a> {
         Ok(if let Some((_, token)) = self.lexer.next() {
             let token = token?;
             self.output_str(token.ty.default_highlighter());
-            Some(match &token.ty {
+            let token = match &token.ty {
                 Tokens::Keyword(k) => self.builtin(&k)?,
                 Tokens::EOF => return Ok(None),
                 _ => self.command(token)?,
-            })
+            };
+            if let Some((_, t)) = self.lexer.next_if(|(_, t)| { if let Ok(t) = t { t.eq(Tokens::Symbol(';')) } else { false } }) {
+                self.output_str(t?.ty.default_highlighter());
+            };
+            Some(token)
         } else {
             None
         })
