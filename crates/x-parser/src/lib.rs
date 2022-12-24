@@ -33,7 +33,13 @@ impl<'a> Parser<'a> {
                 Tokens::EOF => return Ok(None),
                 _ => self.command(token)?,
             };
-            if let Some((_, t)) = self.lexer.next_if(|(_, t)| { if let Ok(t) = t { t.eq(Tokens::Symbol(';')) } else { false } }) {
+            if let Some((_, t)) = self.lexer.next_if(|(_, t)| {
+                if let Ok(t) = t {
+                    t.eq(Tokens::Symbol(';'))
+                } else {
+                    false
+                }
+            }) {
                 self.output_str(t?.ty.default_highlighter());
             };
             Some(token)

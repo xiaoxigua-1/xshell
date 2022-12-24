@@ -68,7 +68,7 @@ pub fn repl(render: &mut Render, input: &mut Input, shell_state: &ShellState) ->
             } else {
                 input.clear();
                 // check ast and run ast
-                execute(asts) 
+                execute(asts)
             }
         }
         NewLine => {

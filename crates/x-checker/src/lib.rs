@@ -1,7 +1,7 @@
 use x_protocol::ast::AST;
 
 pub struct Checker {
-    asts: Vec<AST>
+    asts: Vec<AST>,
 }
 
 impl Checker {
