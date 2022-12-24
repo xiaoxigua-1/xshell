@@ -15,5 +15,6 @@ members = [
   "./crates/x-engine",
   "./crates/x-parser",
   "./crates/x-render",
-  "./crates/x-input"
+  "./crates/x-input",
+  "./crates/x-checker"
 ]
