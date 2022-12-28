@@ -1,3 +1,5 @@
+mod cli;
+
 use x_engine::XShellEvent;
 
 fn main() {

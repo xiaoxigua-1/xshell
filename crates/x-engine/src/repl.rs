@@ -9,6 +9,7 @@ use x_protocol::{
 use x_render::Render;
 
 use crate::execute::execute;
+
 // read eval print loop
 pub fn repl(render: &mut Render, input: &mut Input, shell_state: &ShellState) -> Result<()> {
     use x_protocol::InputState::*;

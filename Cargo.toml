@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 x-engine = { path = "./crates/x-engine" }
+clap = { version = "4.0.32", features = ["derive"] }
 
 [workspace]
 members = [
