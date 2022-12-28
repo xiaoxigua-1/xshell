@@ -19,7 +19,7 @@ pub struct Args {
     path: Vec<PathBuf>,
    
     /// run the given commands and then exit
-    #[arg(short = 'c')]
+    #[arg(short = 'c', long)]
     command: Option<String>
 }
 
