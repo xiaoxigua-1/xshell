@@ -7,19 +7,19 @@ use std::{error::Error, path::PathBuf};
 pub struct Args {
     /// set environment variable
     #[arg(short = 'e', long = "env", value_parser = parse_key_val::<String, String>)]
-    envs: Vec<(String, String)>,
+    pub(crate) envs: Vec<(String, String)>,
 
     /// set config file path
     #[arg(long = "config")]
-    config: Option<PathBuf>,
+    pub(crate) config: Option<PathBuf>,
 
     /// run script
     #[arg(last = true)]
-    path: Vec<PathBuf>,
+    pub(crate) path: Vec<PathBuf>,
 
     /// run the given commands and then exit
     #[arg(short = 'c', long)]
-    command: Option<String>,
+    pub(crate) command: Option<String>,
 }
 
 /// Parse a single key-value pair
