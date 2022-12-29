@@ -1,3 +1,4 @@
+use x_checker::Checker;
 use x_input::Input;
 use x_parser::{Lexer, Parser};
 use x_protocol::{
@@ -15,6 +16,7 @@ pub fn repl(render: &mut Render, input: &mut Input, shell_state: &ShellState) ->
     use x_protocol::InputState::*;
     let raw_input = input.user_input.clone();
     let lexer = Lexer::new(raw_input.chars());
+    let checker = Checker::new(shell_state);
     let mut parser = Parser::new(lexer);
     let mut output: Vec<StyledContent<String>> = vec![];
     let mut asts: Vec<AST> = vec![];
@@ -22,13 +24,17 @@ pub fn repl(render: &mut Render, input: &mut Input, shell_state: &ShellState) ->
     let is_error = loop {
         match parser.parse() {
             Ok(ast) => {
+                output = parser.output.clone();
+                
                 if let Some(ast) = ast {
+                    if let Err(e) = checker.check(&ast) {
+                        error_header(e, &raw_input, &mut output, &mut parser);
+                    };
+                    output.push(format!("{:?}", ast).stylize());
                     asts.push(ast);
                 } else {
                     break false;
                 }
-
-                output = parser.output.clone();
             }
             Err(e) => {
                 output = parser.output.clone();
@@ -88,7 +94,7 @@ fn error_header(
     parser: &mut Parser,
 ) {
     match e {
-        x_protocol::ShellErr::Syntax(range, _) => {
+        ShellErr::Syntax(range, _) => {
             output.push(raw_input[range].to_string().red());
 
             loop {
@@ -104,7 +110,7 @@ fn error_header(
                 }
             }
         }
-        x_protocol::ShellErr::UnterminatedStr(range) => output.push(
+        ShellErr::UnterminatedStr(range) => output.push(
             format!(
                 "{}{}",
                 raw_input[range.clone()].red(),
@@ -112,7 +118,7 @@ fn error_header(
             )
             .stylize(),
         ),
-        x_protocol::ShellErr::Unterminated(_, i, _) => output[i] = output[i].clone().red(),
-        x_protocol::ShellErr::EOF => {}
+        ShellErr::Unterminated(_, i, _) | ShellErr::UnknownCommand(i, _) => output[i] = output[i].clone().red(),
+        _ => {}
     }
 }

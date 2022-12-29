@@ -13,6 +13,7 @@ fn main() {
         .iter()
         .for_each(|(key, value)| xshell_state.add_env(key.clone(), value.clone()));
     for (key, value) in vars() {
+        println!("{} {}", key, value);
         xshell_state.add_env(key, value);
     }
 

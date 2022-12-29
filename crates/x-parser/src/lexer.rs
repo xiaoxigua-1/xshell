@@ -12,6 +12,7 @@ pub struct Lexer<'a> {
     input_stream: Peekable<Enumerate<Chars<'a>>>,
     end: Range<usize>,
     is_eof: bool,
+    index: usize,
 }
 
 fn token_type(s: String) -> Tokens {
@@ -35,45 +36,48 @@ impl<'a> Lexer<'a> {
             input_stream: chars.enumerate().peekable(),
             end: end..end,
             is_eof: false,
+            index: 0,
         }
     }
 
     /// Get next token from input stream
     pub fn next_token(&mut self) -> Result<Token> {
         Ok(if let Some((i, c)) = self.input_stream.next() {
-            match c {
-                '\n' => Token::new(Tokens::NewLine, i..i + 1),
-                c if c.is_whitespace() => Token::new(Tokens::Space(c), i..i + 1),
+            let token = match c {
+                '\n' => Token::new(Tokens::NewLine, i..i + 1, self.index),
+                c if c.is_whitespace() => Token::new(Tokens::Space(c), i..i + 1, self.index),
                 '"' | '\'' => self.str_lex((i, c), c == '"')?,
                 '|' => self.or(i),
                 '&' => self.and(i),
                 // path
                 '.' | '/' | '~' => self.path((i, c))?,
                 c if c.is_ascii_punctuation() && c != '_' => {
-                    Token::new(Tokens::Symbol(c), i..i + 1)
+                    Token::new(Tokens::Symbol(c), i..i + 1, self.index)
                 }
                 '0'..='9' => self.int_lex((i, c))?,
                 _ => self.ident_lex((i, c))?,
-            }
+            };
+            self.index += 1;
+            token
         } else {
             self.is_eof = true;
-            Token::new(Tokens::EOF, self.end.clone())
+            Token::new(Tokens::EOF, self.end.clone(), self.index)
         })
     }
 
     fn or(&mut self, start: usize) -> Token {
         if let Some((end, _)) = self.input_stream.next_if(|(_, c)| c.eq(&'|')) {
-            Token::new(Tokens::PipeLine, start..end + 1)
+            Token::new(Tokens::PipeLine, start..end + 1, self.index)
         } else {
-            Token::new(Tokens::Or, start..start + 1)
+            Token::new(Tokens::Or, start..start + 1, self.index)
         }
     }
 
     fn and(&mut self, start: usize) -> Token {
         if let Some((end, _)) = self.input_stream.next_if(|(_, c)| c.eq(&'&')) {
-            Token::new(Tokens::And, start..end)
+            Token::new(Tokens::And, start..end, self.index)
         } else {
-            Token::new(Tokens::Background, start..start + 1)
+            Token::new(Tokens::Background, start..start + 1, self.index)
         }
     }
 
@@ -104,7 +108,7 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        Ok(Token::new(Tokens::Path(path), start..end + 1))
+        Ok(Token::new(Tokens::Path(path), start..end + 1, self.index))
     }
 
     fn escape_char(&mut self) -> Result<char> {
@@ -128,7 +132,7 @@ impl<'a> Lexer<'a> {
             if let Some((i, c)) = self.input_stream.next() {
                 s.push(c);
                 if (double && c == '"') || (!double && c == '\'') {
-                    break Ok(Token::new(Tokens::Str(s), start..i + 1));
+                    break Ok(Token::new(Tokens::Str(s), start..i + 1, self.index));
                 }
             } else {
                 break Err(x_protocol::ShellErr::UnterminatedStr(start..start + 1));
@@ -154,7 +158,7 @@ impl<'a> Lexer<'a> {
             self.decimal_lex(i, &mut int_s)?
         }
 
-        Ok(Token::new(Tokens::Int(int_s.clone()), i..i + int_s.len()))
+        Ok(Token::new(Tokens::Int(int_s.clone()), i..i + int_s.len(), self.index))
     }
 
     fn decimal_lex(&mut self, start: usize, s: &mut String) -> Result<()> {
@@ -236,10 +240,10 @@ impl<'a> Lexer<'a> {
                     let (_, c) = self.input_stream.next().unwrap();
                     s.push(c);
                 } else {
-                    break Ok(Token::new(token_type(s), start..*i));
+                    break Ok(Token::new(token_type(s), start..*i, self.index));
                 }
             } else {
-                break Ok(Token::new(token_type(s), start..self.end.end));
+                break Ok(Token::new(token_type(s), start..self.end.end, self.index));
             }
         }
     }

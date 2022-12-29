@@ -61,11 +61,12 @@ Gen!(
 pub struct Token {
     pub ty: Tokens,
     pub span: Range<usize>,
+    pub index: usize,
 }
 
 impl Token {
-    pub fn new(ty: Tokens, span: Range<usize>) -> Self {
-        Token { ty, span }
+    pub fn new(ty: Tokens, span: Range<usize>, index: usize) -> Self {
+        Token { ty, span, index }
     }
 
     pub fn eq(&self, ty: Tokens) -> bool {

@@ -550,6 +550,7 @@ dependencies = [
 name = "x-engine"
 version = "0.1.0"
 dependencies = [
+ "x-checker",
  "x-input",
  "x-parser",
  "x-protocol",

@@ -7,5 +7,6 @@ pub enum ShellErr {
     Syntax(Range<usize>, String),
     Unterminated(Range<usize>, usize, String),
     UnterminatedStr(Range<usize>),
+    UnknownCommand(usize, String), 
     EOF,
 }
