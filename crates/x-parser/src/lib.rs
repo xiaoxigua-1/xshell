@@ -25,6 +25,7 @@ impl<'a> Parser<'a> {
     }
 
     pub fn parse(&mut self) -> Result<Option<AST>> {
+        self.output.clear();
         Ok(if let Some((_, token)) = self.lexer.next() {
             let token = token?;
             self.output_str(token.ty.default_highlighter());

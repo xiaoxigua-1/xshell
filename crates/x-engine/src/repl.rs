@@ -24,21 +24,19 @@ pub fn repl(render: &mut Render, input: &mut Input, shell_state: &ShellState) ->
     let is_error = loop {
         match parser.parse() {
             Ok(ast) => {
-                output = parser.output.clone();
-                
+                output.append(&mut parser.output.clone());
+
                 if let Some(ast) = ast {
                     if let Err(e) = checker.check(&ast) {
                         error_header(e, &raw_input, &mut output, &mut parser);
                     };
-                    output.push(format!("{:?}", ast).stylize());
                     asts.push(ast);
                 } else {
                     break false;
                 }
             }
             Err(e) => {
-                output = parser.output.clone();
-                output.push(format!("{:?}", e).stylize());
+                output.append(&mut parser.output.clone());
                 error_header(e.clone(), &raw_input, &mut output, &mut parser);
                 break true;
             }
