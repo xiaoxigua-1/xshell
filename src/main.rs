@@ -1,13 +1,20 @@
 mod cli;
+mod builtin_commands;
 
 use std::env::vars;
 
+use builtin_commands::get_commands;
 use clap::Parser;
 use x_engine::{ShellState, XShellEvent};
 
 fn main() {
     let args: cli::Args = cli::Args::parse();
     let mut xshell_state = ShellState::default();
+
+    // init commands
+    let commands = get_commands();
+    xshell_state.init_commands(commands);
+
     // set environment variable
     args.envs
         .iter()

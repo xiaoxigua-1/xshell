@@ -1,4 +1,3 @@
-use std::ops::Range;
 use std::path::Path;
 
 use x_protocol::{ast::AST, ShellState};
@@ -22,15 +21,10 @@ impl<'a> Checker<'a> {
     }
 
     fn command(&self, index: usize, name: String) -> Result<()> {
-        if let Some(path) = self.state.envs.get("PATH") {
-            let paths = path.split(":").map(|path| { path.to_string() }).collect::<Vec<String>>();
-            for path in paths {
-                if Path::new(&path).exists() {
-                    return Ok(())
-                }
-            }
+        if self.state.commands.iter().find(|command| { command.get_name() == name }).is_some() {
+            Ok(())
+        } else {
+            Err(ShellErr::UnknownCommand(index, name))
         }
-
-        Err(ShellErr::UnknownCommand(index, name))
     }
 }
