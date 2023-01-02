@@ -12,7 +12,7 @@ use x_render::Render;
 use crate::execute::execute;
 
 // read eval print loop
-pub fn repl(render: &mut Render, input: &mut Input, shell_state: &ShellState) -> Result<()> {
+pub fn repl(render: &mut Render, input: &mut Input, shell_state: &mut ShellState) -> Result<()> {
     use x_protocol::InputState::*;
     let raw_input = input.user_input.clone();
     let lexer = Lexer::new(raw_input.chars());
@@ -66,14 +66,16 @@ pub fn repl(render: &mut Render, input: &mut Input, shell_state: &ShellState) ->
     match input.state {
         Execute => {
             render.debug(format!("{:?}", asts))?;
-            render.new_line(shell_state)?;
             if is_error {
                 input.state = NONE;
                 repl(render, input, shell_state)?;
             } else {
                 input.clear();
                 // check ast and run ast
-                execute(asts)
+                execute(shell_state, asts);
+            }
+            if !shell_state.is_exit {
+                render.new_line(shell_state)?;
             }
         }
         NewLine => {

@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::Token;
 
 #[derive(Debug, Clone)]
@@ -38,4 +40,14 @@ pub enum Expression {
     Int(Token),
     Path(Token),
     Symbol(Token),
+}
+
+impl Display for Expression {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use Expression::*;
+
+        write!(f, "{}", match self {
+            Variable(t) | Ident(t) | Str(t) | Int(t) | Path(t) | Symbol(t) => t.ty.to_string()    
+        })
+    }
 }

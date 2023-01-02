@@ -1,5 +1,7 @@
+use std::time::Duration;
+
 use x_input::Input;
-use x_protocol::crossterm::event::{read, Event};
+use x_protocol::crossterm::event::{read, Event, poll};
 use x_protocol::crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use x_protocol::crossterm::Result;
 use x_protocol::state::ShellState;
@@ -23,11 +25,13 @@ impl XShellEvent {
         enable_raw_mode()?;
         render.output_state(&self.state)?;
         while !self.state.is_exit {
-            repl(&mut render, &mut input, &self.state)?;
-
-            match read()? {
-                Event::Key(key) => input.input(&key, &mut self.state),
-                _ => {}
+            repl(&mut render, &mut input, &mut self.state)?;
+            
+            if poll(Duration::from_millis(100))? {
+                match read()? {
+                    Event::Key(key) => input.input(&key, &mut self.state),
+                    _ => {}
+                }
             }
         }
 

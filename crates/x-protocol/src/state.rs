@@ -1,6 +1,7 @@
 use std::{collections::HashMap, path::PathBuf, fs};
 use x_util::{home_dir, whoami};
 
+use crate::Result;
 use crate::command::Command;
 
 #[derive(Debug, Clone, PartialEq)]
