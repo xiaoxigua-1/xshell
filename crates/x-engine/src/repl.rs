@@ -8,7 +8,6 @@ use x_protocol::{
     ShellErr, ShellState,
 };
 use x_render::Render;
-
 use crate::execute::execute;
 
 // read eval print loop
@@ -72,7 +71,7 @@ pub fn repl(render: &mut Render, input: &mut Input, shell_state: &mut ShellState
             } else {
                 input.clear();
                 // check ast and run ast
-                execute(shell_state, asts);
+                execute(shell_state, render, asts);
             }
             if !shell_state.is_exit {
                 render.new_line(shell_state)?;

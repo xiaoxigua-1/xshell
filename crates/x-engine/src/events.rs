@@ -25,13 +25,13 @@ impl XShellEvent {
         enable_raw_mode()?;
         render.output_state(&self.state)?;
         while !self.state.is_exit {
-            repl(&mut render, &mut input, &mut self.state)?;
-            
             if poll(Duration::from_millis(100))? {
                 match read()? {
                     Event::Key(key) => input.input(&key, &mut self.state),
                     _ => {}
                 }
+            
+                repl(&mut render, &mut input, &mut self.state)?;
             }
         }
 
