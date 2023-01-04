@@ -82,7 +82,8 @@ impl Display for Tokens {
             f,
             "{}",
             match self {
-                Path(s) | Ident(s) | Int(s) | Str(s) | Arg(s) => s.to_string(),
+                Path(s) | Ident(s) | Int(s) | Arg(s) => s.to_string(),
+                Str(s) => s[1..s.len() - 1].to_string(),
                 Keyword(k) => k.to_string(),
                 Space(c) | Symbol(c) => c.to_string(),
                 Background => "&".into(),

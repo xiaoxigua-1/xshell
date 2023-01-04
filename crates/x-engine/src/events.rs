@@ -24,6 +24,8 @@ impl XShellEvent {
 
         enable_raw_mode()?;
         render.output_state(&self.state)?;
+        self.state.updata();
+ 
         while !self.state.is_exit {
             if poll(Duration::from_millis(100))? {
                 match read()? {
@@ -32,6 +34,7 @@ impl XShellEvent {
                 }
             
                 repl(&mut render, &mut input, &mut self.state)?;
+            } else {
             }
         }
 

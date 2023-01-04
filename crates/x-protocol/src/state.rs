@@ -2,7 +2,7 @@ use std::{collections::HashMap, path::PathBuf, fs};
 use x_util::{home_dir, whoami};
 
 use crate::Result;
-use crate::command::Command;
+use crate::command::{Command, EnvCommand};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum InputState {
@@ -53,16 +53,17 @@ impl ShellState {
 
     pub fn updata(&mut self) {
         if let Some(path) = self.envs.get("PATH") {
-            self.commands.clear();
             path.split(":").for_each(|path| {
                 if let Ok(dir) = fs::read_dir(path) {
                     for file in dir {
-                        
+                        let file = file.unwrap();
+                        let name = file.file_name().into_string().unwrap();
+                        if self.commands.iter().find(|command| { command.get_name() == name }).is_none() {
+                            let command = EnvCommand::new(name, file.path());
+                            self.commands.push(Box::new(command));
+                        };
                     }
                 }
-                if self.commands.iter().find(|command| { command.get_name() == path }).is_none() {
-                    
-                };
             })
         }
     }

@@ -1,4 +1,4 @@
-use x_protocol::{ast::{AST, Expression}, ShellState};
+use x_protocol::{ast::{AST, Expression}, ShellState, crossterm::terminal::{disable_raw_mode, enable_raw_mode}};
 use x_render::Render;
 
 pub fn execute(state: &mut ShellState, render: &mut Render, asts: Vec<AST>) {
@@ -14,6 +14,8 @@ fn command(state: &mut ShellState, render: &mut Render, name: String, args: Vec<
     let Some(command) = state.commands.iter().find(|command| { command.get_name() == name }) else {
         return;
     };
-
+    
+    disable_raw_mode().unwrap();
     command.clone().run(state, args.iter().map(|e| { e.to_string() }).collect());
+    enable_raw_mode().unwrap();
 }

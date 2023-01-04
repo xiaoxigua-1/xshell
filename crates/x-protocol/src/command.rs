@@ -1,3 +1,4 @@
+use std::process::Stdio;
 use std::{fmt::Debug, path::PathBuf};
 
 use crate::{Result, ShellState};
@@ -44,7 +45,7 @@ impl Clone for Box<dyn Command> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct EnvCommand {
     name: String,
     path: PathBuf,
@@ -53,6 +54,7 @@ pub struct EnvCommand {
 
 impl Command for EnvCommand {
     fn run(&self, _: &mut ShellState, args: Vec<String>) -> Result<()> {
+        std::process::Command::new(&self.path).args(&args).status().unwrap();
         Ok(())
     }
 
@@ -65,13 +67,11 @@ impl Command for EnvCommand {
     }
 }
 
-impl Debug for EnvCommand {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Command name: {}\nPath: {:?}\nUsage: {}", self.name, self.path, self.usage)
-    }
-}
-
 impl EnvCommand {
+    pub fn new(name: String, path: PathBuf) -> Self {
+        EnvCommand { name, path, usage: String::new() }
+    }
+
     pub fn edit_usage(&mut self, usage: String) {
         self.usage = usage;
     }
